@@ -209,17 +209,41 @@ function connectRoom(roomId) {
   history.replaceState(null, '', `/?room=${encodeURIComponent(roomId)}`);
   const source = new EventSource(`/api/room/${encodeURIComponent(roomId)}/events?token=${encodeURIComponent(seatInfo.token)}`);
   online.source = source;
-  source.onmessage = (ev) => {
-    online.connected = true;
-    online.state = JSON.parse(ev.data);
+  const apply = (state) => {
+    online.state = state;
     online.stateAt = Date.now(); // the clock counts down from here
+    online.lastHeard = Date.now();
     view = online.state.view;
     render();
+  };
+  source.onmessage = (ev) => {
+    online.connected = true;
+    apply(JSON.parse(ev.data));
   };
   source.onerror = () => {
     online.connected = false;
     render();
   };
+  // Backup for phones and picky networks: if the live connection goes quiet, ask for the duel directly.
+  const mine = online;
+  const poll = setInterval(async () => {
+    if (online !== mine) { clearInterval(poll); return; }
+    const quiet = Date.now() - (mine.lastHeard || 0);
+    // Live connection working: only a safety check every 30 s. Not working: every 2 s.
+    if (mine.connected ? quiet < 30_000 : quiet < 3000) return;
+    try {
+      const { ok, data } = await api('GET', `/api/room/${encodeURIComponent(roomId)}/state?token=${encodeURIComponent(seatInfo.token)}`);
+      if (ok && online === mine) {
+        const changed = JSON.stringify(data) !== JSON.stringify(mine.state);
+        mine.lastHeard = Date.now();
+        if (changed) apply(data);
+      }
+    } catch { /* offline for a moment */ }
+  }, 2000);
+  document.addEventListener('visibilitychange', () => {
+    // Back from another app or a locked screen: catch up right away.
+    if (!document.hidden && online === mine) { mine.lastHeard = 0; mine.connected = false; }
+  });
   render();
 }
 
