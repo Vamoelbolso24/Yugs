@@ -3,8 +3,7 @@
 Yugs: Playground Dueling is a free fan game. Keep it fun for everyone:
 
 - **Be respectful.** No insults, harassment, hate speech, threats or spam, in chat or in your username.
-- **No cheating.** Don't use bots, scripts or bugs to win, earn coins or open packs. Found a bug? Press **Report a bug**; reporting it is never a problem, abusing it is.
-- **One account per person.** No extra accounts to collect free packs or coins, and no arranged wins between accounts to raise ELO.
+- **No cheating.** Don't use bots, scripts or bugs to win, earn coins or open packs, and don't arrange wins to raise someone's ELO. Found a bug? Press **Report a bug**; reporting it is never a problem, abusing it is.
 - **Don't leave duels on purpose.** Running out your clock or disconnecting to annoy your opponent counts as a loss, and doing it again and again can get you banned.
 - **Keep your account to yourself.** Don't share or sell it, and don't pretend to be an admin.
 - **Don't post other people's private information**, or links to harmful websites.
@@ -26,7 +25,5 @@ If someone breaks the rules, admins can delete messages, mute players in chat, o
 **Your internet address (IP)** is only held in the server's memory for a short time to stop password guessing and spam. It is not saved.
 
 **Deleting your account:** email **support@playgrounddueling.com** from the email of your account and we will delete it and everything linked to it.
-
-Yugs is meant for players aged 13 and older.
 
 This page may change as the game grows; big changes will be announced in the news.

@@ -112,6 +112,18 @@ export class DuelSession {
   /** The player who conceded, if the duel ended that way. */
   surrendered: 0 | 1 | null = null;
   private readonly bots = new Map<number, SimpleAi>();
+  private disposed = false;
+
+  /** Frees the duel engine's memory. Only call it once nobody can reach this duel any more. */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    try {
+      this.duel.destroy();
+    } catch (e) {
+      console.error('Could not free a duel:', e);
+    }
+  }
 
   private constructor(duel: LocalDuel, cards: CardDatabase, names: [string, string], seed: number) {
     this.duel = duel;

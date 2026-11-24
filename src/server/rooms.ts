@@ -284,7 +284,13 @@ export class RoomManager {
       }
       const anyoneHere = room.seats.some((st) => st && st.clients.size > 0);
       const lastSeen = Math.max(...room.seats.map((st) => st?.lastSeen ?? 0));
-      if (!anyoneHere && now - lastSeen > 6 * 60 * 60 * 1000) this.rooms.delete(id);
+      // Nobody here: drop finished duels after 30 minutes, unfinished ones (or never started) after 6 hours.
+      const finished = !!room.session && room.session.winner !== null;
+      if (!anyoneHere && now - lastSeen > (finished ? 30 * 60 * 1000 : 6 * 60 * 60 * 1000)) {
+        if (room.clock.timer) clearTimeout(room.clock.timer);
+        room.session?.dispose();
+        this.rooms.delete(id);
+      }
     }
   }
 }

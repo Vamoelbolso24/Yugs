@@ -504,3 +504,8 @@ button.danger { background: #c0392b; color: #fff; }
 .rules-body h3 { margin: 14px 0 6px; }
 .rules-body h3:first-child { margin-top: 0; }
 .footer a.rules-link, .auth-form a.rules-link { color: var(--accent); }
+
+/* Beta and maintenance */
+.brand .beta-tag { color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+.maintenance-banner { background: #3a2a0a; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+.beta-note { margin: 8px 0 0; }

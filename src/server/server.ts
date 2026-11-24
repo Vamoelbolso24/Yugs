@@ -19,6 +19,7 @@ import { createNewsApi } from './newsApi.ts';
 import { createChat } from './chat.ts';
 import { createReports } from './reports.ts';
 import { createAdminPlayers } from './adminPlayers.ts';
+import { createSiteStatus } from './siteStatus.ts';
 import { PlayerData } from '../game/playerData.ts';
 import { createPlayerApi } from './playerApi.ts';
 import { CUSTOM_PICS_DIR, customScriptReader } from '../content/customCards.ts';
@@ -44,7 +45,38 @@ console.log('Loading card database...');
 const cards = new CardDatabase(CARD_DB_FILES);
 console.log(`Loaded ${cards.cards.size} cards.`);
 /** Local duels (practice, vs bot, admin test). viewer 'all' = one person plays both sides. */
-const sessions = new Map<string, { session: DuelSession; ownerId: number | null; viewer: 0 | 1 | 'all' }>();
+const sessions = new Map<string, { session: DuelSession; ownerId: number | null; owner: string; viewer: 0 | 1 | 'all'; lastUsed: number }>();
+/** Each account (or, logged out, each internet address) keeps at most this many practice/bot duels; starting another drops the oldest. */
+const LOCAL_DUELS_EACH = 2;
+/** All local duels together, so the server's memory can't fill up. */
+const LOCAL_DUELS_MAX = 400;
+
+function dropLocalDuel(id: string): void {
+  const e = sessions.get(id);
+  if (!e) return;
+  sessions.delete(id);
+  e.session.dispose();
+}
+
+/** Remembers a new local duel and makes room for it. */
+function addLocalDuel(session: DuelSession, ownerId: number | null, owner: string, viewer: 0 | 1 | 'all'): void {
+  const mine = [...sessions].filter(([, e]) => e.owner === owner).sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+  while (mine.length >= LOCAL_DUELS_EACH) dropLocalDuel(mine.shift()![0]);
+  if (sessions.size >= LOCAL_DUELS_MAX) {
+    const oldest = [...sessions].sort((a, b) => a[1].lastUsed - b[1].lastUsed)[0];
+    if (oldest) dropLocalDuel(oldest[0]);
+  }
+  sessions.set(session.id, { session, ownerId, owner, viewer, lastUsed: Date.now() });
+}
+
+// Clean up practice/bot duels nobody touched for a while (finished: 15 minutes, unfinished: 2 hours).
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, e] of sessions) {
+    const idle = now - e.lastUsed;
+    if (idle > (e.session.winner !== null ? 15 * 60_000 : 2 * 60 * 60_000)) dropLocalDuel(id);
+  }
+}, 60_000).unref();
 const db = openDatabase();
 const localSettings = loadLocalSettings();
 // YUGS_TEST_CODES=1 lets test scripts sign up without an inbox. Ignored when a real email key is set.
@@ -155,6 +187,7 @@ async function handleMatchApi(req: IncomingMessage, res: ServerResponse): Promis
   const user = accounts.userFromRequest(req);
   if (!user) return sendJson(res, 401, { error: 'Log in to find a duel.' });
   if (req.method === 'POST') {
+    if (siteStatus.blockNewDuel(req, res)) return;
     const deck = players.duelDeck(user.id);
     if (!deck.ok) return sendJson(res, 409, { error: deck.error });
     return sendJson(res, 200, matchmaker.join(user, user.elo, deck.value));
@@ -171,6 +204,7 @@ async function handleRoomApi(req: IncomingMessage, res: ServerResponse, parts: s
   // POST /api/room  -> create a room, you get seat 0 (you duel with your active deck)
   if (req.method === 'POST' && parts.length === 1) {
     if (!user) return sendJson(res, 401, { error: 'Log in to create an online duel.' });
+    if (siteStatus.blockNewDuel(req, res)) return;
     const deck = players.duelDeck(user.id);
     if (!deck.ok) return sendJson(res, 409, { error: deck.error });
     return sendJson(res, 200, rooms.create(user, deck.value));
@@ -183,6 +217,7 @@ async function handleRoomApi(req: IncomingMessage, res: ServerResponse, parts: s
     if (!user) return sendJson(res, 401, { error: 'Log in to join this duel.' });
     const back = rooms.rejoin(room, user);
     if (back) return sendJson(res, 200, { roomId: room.id, ...back });
+    if (siteStatus.blockNewDuel(req, res)) return;
     const deck = players.duelDeck(user.id);
     if (!deck.ok) return sendJson(res, 409, { error: deck.error });
     const result = await rooms.join(room, user, deck.value);
@@ -277,6 +312,7 @@ const playerApi = createPlayerApi({ accounts, players, cards, content, sendJson,
 const newsApi = createNewsApi({ accounts, db, sendJson, readBody });
 const chatApi = createChat({ accounts, db, sendJson, readBody });
 const reportsApi = createReports({ accounts, db, sendJson, readBody });
+const siteStatus = createSiteStatus({ accounts, sendJson, readBody });
 const adminPlayersApi = createAdminPlayers({
   accounts, db, sendJson, readBody,
   onBanned: (userId) => { rooms.forfeitUser(userId, 'was banned'); matchmaker.leave(userId); },
@@ -290,6 +326,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
   if (await chatApi(req, res, parts)) return;
   if (await reportsApi(req, res, parts)) return;
   if (await adminPlayersApi(req, res, parts)) return;
+  if (await siteStatus.handle(req, res, parts)) return;
   // GET /api/info
   if (req.method === 'GET' && parts[0] === 'info') return sendJson(res, 200, { lanUrls: lanUrls() });
 
@@ -299,6 +336,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
   //   mode 'test': admins only. { deckA, deckB, hand: [card codes] } you play both sides,
   //                deck A starts with the given cards in hand. Ownership is not checked.
   if (req.method === 'POST' && parts.length === 1 && parts[0] === 'duel') {
+    if (siteStatus.blockNewDuel(req, res)) return;
     const body = await readBody(req);
     const seed = typeof body.seed === 'number' ? body.seed : undefined;
     const user = accounts.userFromRequest(req);
@@ -313,7 +351,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
       const decks: [DeckCodes, DeckCodes] = human === 0 ? [mine.value, botDeck] : [botDeck, mine.value];
       const names: [string, string] = human === 0 ? [user.username, 'Bot'] : ['Bot', user.username];
       const session = await DuelSession.start(cards, { decks, names, seed, bots: [bot] });
-      sessions.set(session.id, { session, ownerId: user.id, viewer: human });
+      addLocalDuel(session, user.id, `u:${user.id}`, human);
       return sendJson(res, 200, session.view(human));
     }
     if (body.mode === 'test') {
@@ -326,7 +364,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
       const session = await DuelSession.start(cards, {
         decks: [a, b], names: [`${a.name}`, `${b.name}`], seed, openingHands: [hand, []],
       });
-      sessions.set(session.id, { session, ownerId: user.id, viewer: 'all' });
+      addLocalDuel(session, user.id, `u:${user.id}`, 'all');
       return sendJson(res, 200, session.view());
     }
     const session = await DuelSession.start(cards, {
@@ -334,14 +372,15 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
       names: ['Yugi', 'Kaiba'],
       seed,
     });
-    sessions.set(session.id, { session, ownerId: null, viewer: 'all' });
+    addLocalDuel(session, null, user ? `u:${user.id}` : `a:${clientAddress(req)}`, 'all');
     return sendJson(res, 200, session.view());
   }
 
   // Anything else that isn't a duel: say so (an old server that wasn't restarted after an update ends up here).
   if (parts[0] !== 'duel') return sendJson(res, 404, { error: 'Unknown request. If the game was just updated, restart the server.' });
   const entry = parts[1] ? sessions.get(parts[1]) : undefined;
-  if (!entry) return sendJson(res, 404, { error: 'Duel not found. Start a new duel.' });
+  if (!entry) return sendJson(res, 404, { error: 'This duel was closed (it ended, sat unused too long, or you started a newer one). Start a new duel.' });
+  entry.lastUsed = Date.now();
   if (entry.ownerId !== null && accounts.userFromRequest(req)?.id !== entry.ownerId) return sendJson(res, 403, { error: 'This is not your duel.' });
   const { session, viewer } = entry;
   const show = () => session.view(viewer);

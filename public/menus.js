@@ -86,7 +86,9 @@ function button(label, onClick, cls = '') {
 
 function renderMenus(box) {
   const lobbyBox = $('lobby-box');
-  lobbyBox.classList.toggle('wide', !!(profile && profile.starterChosen && ['packs', 'decks', 'test', 'packmaker', 'banlist', 'standings', 'tutorial', 'reports', 'players'].includes(screen)));
+  lobbyBox.classList.toggle('wide', !!(profile && profile.starterChosen && ['packs', 'decks', 'test', 'packmaker', 'banlist', 'standings', 'tutorial', 'reports', 'players', 'maintenance'].includes(screen)));
+  if (siteStatus.maintenance && !currentUser.isAdmin) return renderMaintenanceWait(box);
+  if (screen === 'maintenance' && currentUser.isAdmin) return renderMaintenanceAdmin(box);
   if (!profile) {
     box.appendChild(el('p', 'muted', 'Loading your profile...'));
     loadProfile();
@@ -144,13 +146,49 @@ function renderHome(box) {
     button('Test duel (admin)', () => { screen = 'test'; lobbyError = ''; render(); }, 'secondary admin'),
     button('Pack Maker (admin)', () => { screen = 'packmaker'; menuMessage = ''; render(); }, 'secondary admin'),
     button('Banlist editor (admin)', () => { screen = 'banlist'; menuMessage = ''; render(); }, 'secondary admin'),
+    button(siteStatus.maintenance ? 'Maintenance: ON (admin)' : 'Maintenance (admin)', () => { screen = 'maintenance'; menuMessage = ''; render(); }, 'secondary admin'),
     button('Players (admin)', () => { screen = 'players'; playersView.list = null; playersView.openId = null; menuMessage = ''; render(); }, 'secondary admin'),
     button('Bug reports (admin)', () => { screen = 'reports'; reportsView.data = null; menuMessage = ''; render(); }, 'secondary admin'),
   );
   box.appendChild(grid);
+  box.appendChild(el('p', 'muted small beta-note', 'Yugs is in beta: expect some bugs and the odd maintenance day. If something looks wrong, press Report a bug.'));
   if (need('news') && cache.news.homeNote) box.appendChild(renderMarkdown(cache.news.homeNote)).classList.add('home-note');
   box.appendChild(chatSection());
   box.appendChild(newsSection());
+}
+
+// ------------------------------------------------------------------ maintenance
+
+function renderMaintenanceWait(box) {
+  box.appendChild(userBarEl());
+  box.appendChild(el('p', '', 'New duels are paused for a moment. If you were in an online duel, open its link again to finish it.'));
+  box.appendChild(button('Check again', () => loadSiteStatus(), 'secondary'));
+}
+
+function renderMaintenanceAdmin(box) {
+  const top = el('div', 'screen-top');
+  top.append(el('h2', '', 'Maintenance mode'), button('Back', () => { screen = 'home'; menuMessage = ''; render(); }, 'secondary'));
+  box.appendChild(top);
+  box.appendChild(el('p', 'muted small', 'Turn this on a few minutes before you update the server. Players can\'t start new duels (online, ranked, practice or bot) and see your message instead of the menus; duels already running can be finished. You can still do everything. It stays on after a restart until you turn it off.'));
+  const msg = el('textarea', 'text-input');
+  msg.rows = 3;
+  msg.maxLength = 500;
+  msg.placeholder = 'Message for players (optional), e.g. "Updating to add new cards, back in about 15 minutes."';
+  msg.value = siteStatus.maintenance ? siteStatus.message : '';
+  box.appendChild(msg);
+  if (menuMessage) box.appendChild(el('div', 'error', menuMessage));
+  const save = async (on) => {
+    const { ok, data } = await api('POST', '/api/admin/status', { maintenance: on, message: msg.value });
+    if (!ok) { menuMessage = data.error; render(); return; }
+    siteStatus = data;
+    menuMessage = '';
+    render();
+  };
+  const row = el('div', 'button-row');
+  if (siteStatus.maintenance) row.append(button('Update message', () => save(true), 'secondary'), button('Turn OFF', () => save(false)));
+  else row.append(button('Turn ON', () => save(true), 'danger'));
+  box.appendChild(el('p', '', siteStatus.maintenance ? 'Maintenance mode is ON.' : 'Maintenance mode is off.'));
+  box.appendChild(row);
 }
 
 // ------------------------------------------------------------------ add an email (accounts made before email sign-up)

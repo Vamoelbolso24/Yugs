@@ -61,6 +61,27 @@ let authNotice = '';
 let authBusy = false;
 /** Older accounts without an email get asked to add one. */
 let needsEmail = false;
+/** Maintenance mode (from the server, checked every minute). */
+let siteStatus = { maintenance: false, message: '' };
+
+async function loadSiteStatus() {
+  try {
+    const { ok, data } = await api('GET', '/api/status');
+    if (!ok) return;
+    const changed = data.maintenance !== siteStatus.maintenance || data.message !== siteStatus.message;
+    siteStatus = data;
+    if (changed && mode === null) render();
+  } catch { /* server restarting */ }
+}
+
+function maintenanceBanner() {
+  if (!siteStatus.maintenance) return null;
+  const admin = currentUser && currentUser.isAdmin;
+  const b = el('div', 'maintenance-banner');
+  b.append(el('b', '', admin ? 'Maintenance mode is ON. ' : 'Maintenance: '),
+    document.createTextNode(admin ? 'Players can\'t start new duels and only see this message: ' + siteStatus.message : siteStatus.message));
+  return b;
+}
 
 async function loadUser() {
   try {
@@ -937,6 +958,8 @@ function renderLobby() {
   box.replaceChildren();
   box.classList.remove('wide');
   box.appendChild(el('h1', '', 'Yugs'));
+  const banner = maintenanceBanner();
+  if (banner) box.appendChild(banner);
   if (mode === null && currentUser && !inviteRoom) {
     renderMenus(box);
     for (const node of box.querySelectorAll('[data-keep-scroll]')) node.scrollTop = scrolls[node.dataset.keepScroll] || 0;
@@ -1106,7 +1129,7 @@ function renderLobby() {
     return;
   }
 
-  box.appendChild(el('p', 'muted', 'Test build: duels are Yugi vs Kaiba for now.'));
+  box.appendChild(el('p', 'muted', 'Yugs: Playground Dueling is in beta. Log in for ranked duels, packs and your own decks, or try a practice duel (Yugi vs Kaiba, you play both sides).'));
   const practice = el('button', 'secondary', 'Practice duel (you play both sides)');
   practice.addEventListener('click', startPractice);
   if (!currentUser) {
@@ -1190,7 +1213,8 @@ $('btn-report').addEventListener('click', () => openBugReport());
 (async function init() {
   await initCardImages();
   api('GET', '/api/info').then(({ ok, data }) => { if (ok) lanUrls = data.lanUrls || []; }).catch(() => {});
-  await loadUser();
+  await Promise.all([loadUser(), loadSiteStatus()]);
+  setInterval(loadSiteStatus, 60_000);
   const room = new URLSearchParams(location.search).get('room');
   if (room && storedSeat(room)) connectRoom(room);
   else if (room && currentUser) joinOnline(room); // gives your seat back if you were already in this duel
