@@ -330,7 +330,11 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
   if (await adminPlayersApi(req, res, parts)) return;
   if (await siteStatus.handle(req, res, parts)) return;
   // GET /api/info
-  if (req.method === 'GET' && parts[0] === 'info') return sendJson(res, 200, { lanUrls: lanUrls() });
+  // Same-Wi-Fi links are only for playing at home; behind the public HTTPS address they would not work.
+  if (req.method === 'GET' && parts[0] === 'info') {
+    const publicServer = !!req.headers['x-forwarded-proto'] || process.env.HOST === '127.0.0.1';
+    return sendJson(res, 200, { lanUrls: publicServer ? [] : lanUrls() });
+  }
 
   // POST /api/duel  { mode: 'test', ... }  -> start a local duel
   //   mode 'test': admins only. { deckA, deckB, hand: [card codes] } you play both sides,
