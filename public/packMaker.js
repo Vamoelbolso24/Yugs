@@ -379,6 +379,7 @@ function renderPmShop(box) {
   next.appendChild(el('p', 'muted small', shop.next
     ? 'Scheduled. Players see it when the week resets. You can change it until then.'
     : 'Nothing scheduled, so the shop keeps this week\'s packs. To change them, drag packs from the list below into the places and press "Schedule for next week".'));
+  next.appendChild(el('p', 'muted small', 'The shop switches by itself at the weekly reset. "Start it now" switches right away instead (for example after a mistake, or to launch new packs early).'));
   const slots = el('div', 'pm-slots');
   for (let i = 0; i < shop.size; i++) {
     const id = pm.next[i];
@@ -408,7 +409,10 @@ function renderPmShop(box) {
   next.appendChild(slots);
   const row = el('div', 'button-row');
   row.append(button('Schedule for next week', () => pmSchedule(pm.next.filter(Boolean))));
-  if (shop.next) row.append(button('Cancel the schedule', () => { pm.next = shop.current.slice(); pmSchedule([]); }, 'ghost'));
+  if (shop.next) {
+    row.append(button('Start it now', pmStartNow, 'secondary'));
+    row.append(button('Cancel the schedule', () => { pm.next = shop.current.slice(); pmSchedule([]); }, 'ghost'));
+  }
   next.appendChild(row);
   box.appendChild(next);
 
@@ -438,6 +442,17 @@ function pmPackCard(p, opts) {
   card.addEventListener('dblclick', () => { if (pmConfirmDiscard()) { pmOpen(p); pm.tab = 'edit'; render(); } });
   card.title = 'Drag into a shop place. Double-click to edit.';
   return card;
+}
+
+async function pmStartNow() {
+  if (!confirm('Put next week\'s packs in the shop right now? Players see them immediately.')) return;
+  const { ok, data } = await api('POST', '/api/admin/shop/start-now', {});
+  if (!ok) { pm.error = data.error; render(); return; }
+  pmTake(data);
+  pm.next = (data.shop.current || []).slice(0, data.shop.size);
+  pm.error = '';
+  pm.message = 'Done: the new packs are in the shop now. Schedule the following week whenever you like.';
+  render();
 }
 
 async function pmSchedule(ids) {

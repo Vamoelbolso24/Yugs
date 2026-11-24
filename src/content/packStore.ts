@@ -63,6 +63,15 @@ export class PackStore {
     return this.shop().current.map((id) => this.content.packs.find((p) => p.id === id)).filter((p): p is Pack => !!p && p.ready);
   }
 
+  /** Puts next week's scheduled lineup in the shop right now (instead of waiting for the weekly reset). */
+  startNextNow(): { ok: true; shop: ShopFile } | { ok: false; error: string } {
+    const s = this.shop();
+    if (!s.next || !s.next.length) return { ok: false, error: 'Nothing is scheduled for next week yet.' };
+    const now = { current: s.next, next: null, nextFrom: null };
+    this.writeShop(now);
+    return { ok: true, shop: now };
+  }
+
   /** Schedules the lineup for next week (or clears the schedule with an empty list). */
   scheduleNext(ids: string[]): { ok: true; shop: ShopFile } | { ok: false; error: string } {
     const unique = [...new Set(ids.map(String))];

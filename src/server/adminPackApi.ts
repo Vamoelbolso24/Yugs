@@ -82,6 +82,13 @@ export function createAdminPackApi(deps: { accounts: Accounts; packStore: PackSt
       else sendJson(res, 200, state());
       return true;
     }
+    // POST /api/admin/shop/start-now  -> next week's lineup goes in the shop immediately
+    if (area === 'shop' && m === 'POST' && id === 'start-now') {
+      const r = packStore.startNextNow();
+      if (!r.ok) sendJson(res, 400, { error: r.error });
+      else sendJson(res, 200, state());
+      return true;
+    }
     if (area === 'shop' && m === 'PUT') {
       const b = await readBody(req);
       const r = packStore.scheduleNext(Array.isArray(b.next) ? (b.next as unknown[]).map(String) : []);

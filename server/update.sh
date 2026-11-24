@@ -6,12 +6,18 @@ APP=/opt/yugs/app
 cd "$APP"
 echo "== Backup first"
 sudo -u yugs /bin/bash "$APP/server/backup.sh"
+G="sudo -u yugs git -c user.name=Yugs-server -c user.email=server@localhost"
+echo "== Keeping changes made on the live site (Pack Maker, shop, banlist...)"
+$G add -A content
+$G commit -q -m "Changes made on the live site" || echo "(none)"
 echo "== Downloading the new version"
-if ! sudo -u yugs git pull --ff-only; then
+$G fetch -q origin
+if ! $G merge --no-edit -q origin/main; then
+  $G merge --abort || true
   echo
-  echo "STOPPED: files on the server were changed (for example packs made with the Pack Maker here)"
-  echo "and they clash with the new version. Nothing was lost. Send Claude this list:"
-  sudo -u yugs git status --short
+  echo "STOPPED: a file changed both on the live site and in the new version."
+  echo "Nothing was lost and the game keeps running the old version. Send Claude this list:"
+  $G diff --name-only HEAD...origin/main -- content
   exit 1
 fi
 echo "== Card data"
