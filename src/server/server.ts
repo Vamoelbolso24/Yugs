@@ -28,6 +28,7 @@ import { CARD_DB_FILES, ROOT } from '../paths.ts';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const PUBLIC_DIR = path.join(ROOT, 'public');
+const BRANDING_DIR = path.join(ROOT, 'content', 'branding');
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -277,10 +278,12 @@ async function readBody(req: IncomingMessage, limit = 100_000): Promise<Record<s
 async function serveStatic(urlPath: string, res: ServerResponse): Promise<void> {
   // Custom card artwork: /custom-pics/<ID>.jpg  (from content/custom/pics)
   // Pack artwork: /pack-art/<file>  (from content/packs/art)
+  // Site logo and link-preview image: /branding/<file>  (from content/branding, kept out of git like the card pictures)
   const fromCustom = urlPath.startsWith('/custom-pics/');
   const fromPackArt = urlPath.startsWith('/pack-art/');
-  const base = fromCustom ? CUSTOM_PICS_DIR : fromPackArt ? PACK_ART_DIR : PUBLIC_DIR;
-  const prefix = fromCustom ? '/custom-pics/' : fromPackArt ? '/pack-art/' : '';
+  const fromBranding = urlPath.startsWith('/branding/');
+  const base = fromCustom ? CUSTOM_PICS_DIR : fromPackArt ? PACK_ART_DIR : fromBranding ? BRANDING_DIR : PUBLIC_DIR;
+  const prefix = fromCustom ? '/custom-pics/' : fromPackArt ? '/pack-art/' : fromBranding ? '/branding/' : '';
   const relative = urlPath === '/' ? 'index.html' : decodeURIComponent(urlPath.slice(prefix.length)).replace(/^\/+/, '');
   const file = path.resolve(base, relative);
   if (!file.startsWith(base + path.sep)) {

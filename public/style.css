@@ -512,3 +512,4 @@ button.danger { background: #c0392b; color: #fff; }
 .maintenance-banner { background: #0b2533; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
 .beta-note { margin: 8px 0 0; }
 .footer a { color: var(--accent); }
+.site-logo { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto 10px; border-radius: 10px; }

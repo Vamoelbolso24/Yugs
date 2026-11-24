@@ -5,3 +5,4 @@ data/
 .env
 config.local.json
 content/custom/pics/
+content/branding/

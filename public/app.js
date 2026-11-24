@@ -74,6 +74,19 @@ async function loadSiteStatus() {
   } catch { /* server restarting */ }
 }
 
+/** The site logo (content/branding/logo.webp on the server); just the word "Yugs" if there is none. */
+let logoMissing = false;
+function siteLogo() {
+  if (logoMissing) return el('h1', '', 'Yugs');
+  const img = el('img', 'site-logo');
+  img.src = '/branding/logo.webp';
+  img.alt = 'Yugs: Playground Dueling';
+  img.width = 900;
+  img.height = 300;
+  img.addEventListener('error', () => { logoMissing = true; img.replaceWith(el('h1', '', 'Yugs')); });
+  return img;
+}
+
 function maintenanceBanner() {
   if (!siteStatus.maintenance) return null;
   const admin = currentUser && currentUser.isAdmin;
@@ -922,7 +935,7 @@ function renderLobby() {
   };
   box.replaceChildren();
   box.classList.remove('wide');
-  box.appendChild(el('h1', '', 'Yugs'));
+  box.appendChild(siteLogo());
   const banner = maintenanceBanner();
   if (banner) box.appendChild(banner);
   if (mode === null && currentUser && !inviteRoom) {
