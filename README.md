@@ -16,4 +16,5 @@ Run `setup.bat` again at any time to update the card data.
 
 - Duel engine: Project Ignis ygopro-core, via `ocgcore-wasm` (AGPL-3.0).
 - Card scripts: Project Ignis CardScripts (AGPL-3.0). Card database: Project Ignis BabelCDB.
-- This project is licensed under the GNU Affero General Public License v3.0 or later.
+- This project is licensed under the GNU Affero General Public License v3.0 or later (see `LICENSE`).
+  Source code: https://github.com/Vamoelbolso24/Yugs
