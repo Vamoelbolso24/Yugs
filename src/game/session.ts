@@ -42,7 +42,6 @@ interface Pending {
 
 /** Why a card moved (ocgcore REASON_* flags). */
 const REASON_DESTROY = 0x1;
-const REASON_DRAW = 0x2000000;
 
 const PHASES: Record<number, string> = {
   [OcgPhase.DRAW]: 'Draw Phase',
@@ -278,6 +277,17 @@ export class DuelSession {
       case OcgMessageType.MOVE:
         this.trackMove(msg);
         break;
+      case OcgMessageType.DRAW:
+        // Draws fly face-down from the Deck to the hand (the cards themselves stay secret).
+        for (let i = 0; i < msg.drawn.length; i++) {
+          const p = msg.player as 0 | 1;
+          this.addEvent({
+            kind: 'draw', player: p, code: 0,
+            from: { controller: p, location: OcgLocation.DECK, sequence: 0 },
+            to: { controller: p, location: OcgLocation.HAND, sequence: 99 }, // the page aims at the hand itself
+          });
+        }
+        break;
       case OcgMessageType.WIN:
         {
           const loser = this.names[1 - msg.player] ?? 'The opponent';
@@ -322,19 +332,10 @@ export class DuelSession {
   private trackMove(msg: OcgMessage & { type: OcgMessageType.MOVE }): void {
     const from = msg.from, to = msg.to;
     if (!from.location || from.location === to.location) return;
-    if (msg.reason & REASON_DRAW) {
-      // Draws fly face-down from the Deck to the hand (the card itself stays secret).
-      this.addEvent({
-        kind: 'draw', player: to.controller, code: 0,
-        from: { controller: from.controller, location: from.location, sequence: 0 },
-        to: { controller: to.controller, location: to.location, sequence: to.sequence },
-      });
-      return;
-    }
     const FIELD = OcgLocation.MZONE | OcgLocation.SZONE;
     const faceUp = (pos: number) => (pos & (OcgPosition.FACEUP_ATTACK | OcgPosition.FACEUP_DEFENSE)) !== 0;
     const fromField = (from.location & FIELD) !== 0;
-    let kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck' | 'draw' | null = null;
+    let kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck' | null = null;
     if (fromField && (msg.reason & REASON_DESTROY)) kind = 'destroyed';
     else if (to.location === OcgLocation.HAND) kind = 'to-hand';
     else if (to.location === OcgLocation.REMOVED) kind = 'banished';
