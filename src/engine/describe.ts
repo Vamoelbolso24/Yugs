@@ -22,7 +22,7 @@ const LOCATION_NAMES: Record<number, string> = {
   [OcgLocation.OVERLAY]: 'Xyz material',
 };
 
-const WIN_REASONS: Record<number, string> = {
+export const WIN_REASONS: Record<number, string> = {
   0: 'opponent surrendered',
   1: "opponent's LP reached 0",
   2: 'opponent could not draw',

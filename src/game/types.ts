@@ -88,6 +88,15 @@ export interface CardText {
   customId?: string;
 }
 
+/**
+ * Something to animate on the board: a card activated, cards that moved, life points that changed.
+ * Only public information: code is 0 when the card was hidden from at least one player.
+ */
+export type GameEvent =
+  | { id: number; kind: 'activate'; player: 0 | 1; code: number }
+  | { id: number; kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck'; player: 0 | 1; code: number }
+  | { id: number; kind: 'damage' | 'recover'; player: 0 | 1; amount: number };
+
 export interface GameView {
   id: string;
   /** Which player this view is for (null = test mode, both players visible). */
@@ -104,5 +113,9 @@ export interface GameView {
   /** The last few cards shown by effects (excavated / revealed / looked at) that this viewer may see. */
   reveals: { id: number; title: string; codes: number[] }[];
   winner: number | null;
+  /** How the duel ended ("Kaiba's LP reached 0", "Yugi surrendered"...), once it has. */
+  endReason: string | null;
+  /** Recent things to animate, oldest first (ids keep growing during the duel). */
+  events: GameEvent[];
   cards: Record<number, CardText>;
 }

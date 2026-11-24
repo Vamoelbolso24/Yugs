@@ -20,7 +20,7 @@ import {
 } from 'ocgcore-wasm';
 import type { CardDatabase } from '../engine/cardDb.ts';
 import { LocalDuel } from '../engine/duel.ts';
-import { describeMessage } from '../engine/describe.ts';
+import { WIN_REASONS, describeMessage } from '../engine/describe.ts';
 import { createRng } from '../engine/random.ts';
 import { SELECT_HINTS, attributeName, effectText, raceName } from '../engine/strings.ts';
 import { cardText } from '../engine/cardText.ts';
@@ -28,7 +28,7 @@ import { counterName } from '../content/customCards.ts';
 import { DECISION_TYPES, SimpleAi, attributeBits, freePlaces, raceBits } from '../ai/simpleAi.ts';
 import { CARD_SCRIPTS_DIR } from '../paths.ts';
 import type { DeckCodes } from '../decks/starters.ts';
-import type { CardRef, CardText, CardView, ChainMode, ChoiceView, DecisionView, GameView, PlayerView } from './types.ts';
+import type { CardRef, CardText, CardView, ChainMode, ChoiceView, DecisionView, GameEvent, GameView, PlayerView } from './types.ts';
 
 type Picks = number[] | null;
 
@@ -39,6 +39,10 @@ interface Pending {
   /** Extra check of the answer (used by "declare a card name"). Returns an error message, or null. */
   check?: (picks: number[]) => string | null;
 }
+
+/** Why a card moved (ocgcore REASON_* flags). */
+const REASON_DESTROY = 0x1;
+const REASON_DRAW = 0x2000000;
 
 const PHASES: Record<number, string> = {
   [OcgPhase.DRAW]: 'Draw Phase',
@@ -113,6 +117,10 @@ export class DuelSession {
   surrendered: 0 | 1 | null = null;
   private readonly bots = new Map<number, SimpleAi>();
   private disposed = false;
+  /** Recent board events for the animations (all public), and how the duel ended. */
+  private events: GameEvent[] = [];
+  private nextEventId = 1;
+  endReason: string | null = null;
 
   /** Frees the duel engine's memory. Only call it once nobody can reach this duel any more. */
   dispose(): void {
@@ -167,6 +175,7 @@ export class DuelSession {
     this.winner = 1 - player;
     this.surrendered = player;
     this.pending = null;
+    this.endReason = `${this.names[player]} surrendered`;
     this.log.push({ text: `\n*** ${this.names[player]} surrendered. ${this.names[1 - player]} wins! ***` });
   }
 
@@ -175,6 +184,7 @@ export class DuelSession {
     if (this.winner !== null) return;
     this.winner = 1 - player;
     this.pending = null;
+    this.endReason = `${this.names[player]} ${reason}`;
     this.log.push({ text: `\n*** ${this.names[player]} ${reason}. ${this.names[1 - player]} wins! ***` });
   }
 
@@ -243,8 +253,10 @@ export class DuelSession {
         break;
       case OcgMessageType.NEW_PHASE:
         this.phase = PHASES[msg.phase] ?? this.phase;
-        // A new phase is a moment to respond (e.g. activate a Trap in the End Phase): ask each player once.
-        this.phaseFresh = [true, true];
+        // Phase stops (smart mode): ask once at the Standby Phase, the start of the Battle Phase and the End Phase.
+        // Other phases only stop when something happens. "Always" mode asks whenever a response is possible.
+        this.phaseFresh = msg.phase === OcgPhase.STANDBY || msg.phase === OcgPhase.BATTLE_START || msg.phase === OcgPhase.END
+          ? [true, true] : [false, false];
         break;
       case OcgMessageType.LPUPDATE:
         this.lp[msg.player as 0 | 1] = msg.lp;
@@ -252,13 +264,29 @@ export class DuelSession {
       case OcgMessageType.DAMAGE:
       case OcgMessageType.PAY_LPCOST:
         this.lp[msg.player as 0 | 1] = Math.max(0, this.lp[msg.player as 0 | 1] - msg.amount);
+        if (msg.type === OcgMessageType.DAMAGE) this.addEvent({ kind: 'damage', player: msg.player as 0 | 1, amount: msg.amount });
         break;
       case OcgMessageType.RECOVER:
         this.lp[msg.player as 0 | 1] += msg.amount;
+        this.addEvent({ kind: 'recover', player: msg.player as 0 | 1, amount: msg.amount });
         break;
       case OcgMessageType.CHAINING:
         this.chainDepth = msg.chain_size;
         this.responseWindow = true;
+        this.addEvent({ kind: 'activate', player: msg.controller, code: msg.code });
+        break;
+      case OcgMessageType.MOVE:
+        this.trackMove(msg);
+        break;
+      case OcgMessageType.WIN:
+        {
+          const loser = this.names[1 - msg.player] ?? 'The opponent';
+          this.endReason = msg.player === 2 ? 'Both players lost at the same time'
+            : msg.reason === 1 ? `${loser}'s LP reached 0`
+            : msg.reason === 2 ? `${loser} could not draw a card`
+            : msg.reason >= 0x10 ? `${this.names[msg.player]} won with a card effect`
+            : (WIN_REASONS[msg.reason] ?? 'The duel ended').replace(/^opponent/, loser);
+        }
         break;
       case OcgMessageType.CHAIN_END:
         this.chainDepth = 0;
@@ -283,6 +311,31 @@ export class DuelSession {
     const line = describeMessage(msg, this.cards, this.names);
     if (line) this.log.push({ text: line });
     if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
+  }
+
+  private addEvent(e: Omit<GameEvent, 'id'> & Record<string, unknown>): void {
+    this.events.push({ id: this.nextEventId++, ...e } as GameEvent);
+    if (this.events.length > 60) this.events.splice(0, this.events.length - 60);
+  }
+
+  /** Cards leaving the field, going to the hand, being banished...: one event each (code only if public). */
+  private trackMove(msg: OcgMessage & { type: OcgMessageType.MOVE }): void {
+    const from = msg.from, to = msg.to;
+    if (!from.location || from.location === to.location || (msg.reason & REASON_DRAW)) return;
+    const FIELD = OcgLocation.MZONE | OcgLocation.SZONE;
+    const faceUp = (pos: number) => (pos & (OcgPosition.FACEUP_ATTACK | OcgPosition.FACEUP_DEFENSE)) !== 0;
+    const fromField = (from.location & FIELD) !== 0;
+    let kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck' | null = null;
+    if (fromField && (msg.reason & REASON_DESTROY)) kind = 'destroyed';
+    else if (to.location === OcgLocation.HAND) kind = 'to-hand';
+    else if (to.location === OcgLocation.REMOVED) kind = 'banished';
+    else if (to.location === OcgLocation.GRAVE && (fromField || from.location === OcgLocation.HAND)) kind = 'to-grave';
+    else if ((to.location === OcgLocation.DECK || to.location === OcgLocation.EXTRA) && (fromField || from.location === OcgLocation.GRAVE)) kind = 'to-deck';
+    if (!kind) return;
+    // Everyone may see the card if it was face-up before, or ends up face-up where everyone can look.
+    const wasPublic = (fromField && faceUp(from.position)) || from.location === OcgLocation.GRAVE || (from.location === OcgLocation.REMOVED && faceUp(from.position));
+    const nowPublic = to.location === OcgLocation.GRAVE || (to.location === OcgLocation.REMOVED && faceUp(to.position));
+    this.addEvent({ kind, player: from.controller, code: wasPublic || nowPublic ? msg.card : 0 });
   }
 
   /**
@@ -621,6 +674,8 @@ export class DuelSession {
     const visibleReveals = this.reveals.filter((r) => seesAll || r.to === undefined || r.to === viewer)
       .slice(-5).map(({ id, title, codes }) => ({ id, title, codes }));
     for (const r of visibleReveals) r.codes.forEach((c) => used.add(c));
+    const recentEvents = this.events.slice(-30);
+    for (const e of recentEvents) if ('code' in e && e.code) used.add(e.code);
     const cards: Record<number, CardText> = {};
     for (const code of used) {
       const text = cardText(this.cards, code);
@@ -638,6 +693,8 @@ export class DuelSession {
       log: this.log.filter((l) => seesAll || l.to === undefined || l.to === viewer).map((l) => l.text),
       reveals: visibleReveals,
       winner: this.winner,
+      endReason: this.winner === null ? null : this.endReason,
+      events: recentEvents,
       cards,
     };
   }

@@ -694,7 +694,7 @@ function renderActions() {
 function renderModal() {
   const modal = $('modal');
   const d = view.decision;
-  if (!d || view.winner !== null || (d.mode === 'menu' && BOARD_KINDS.has(d.kind))) {
+  if (!d || view.winner !== null || fx.playing || (d.mode === 'menu' && BOARD_KINDS.has(d.kind))) {
     if (!modal.dataset.info) modal.classList.add('hidden');
     return;
   }
@@ -915,9 +915,70 @@ function renderHeader() {
   t.append(document.createTextNode(`Turn ${view.turn} · `), b, document.createTextNode(`'s turn · ${view.phase}`));
 }
 
+// ------------------------------------------------------------------ animations (activations, cards moving, damage)
+
+const FX_LABEL = {
+  'destroyed': 'Destroyed', 'to-grave': 'Sent to the Graveyard', 'to-hand': 'Added to the hand',
+  'banished': 'Banished', 'to-deck': 'Returned to the Deck',
+};
+const FX_TIME = { activate: 1700, destroyed: 1200, damage: 1300, recover: 1100 };
+let fx = { duel: null, lastId: 0, queue: [], playing: false };
+
+/** Queues the board events that are new since the last update (on the first update of a duel, just remembers them). */
+function queueEvents() {
+  const events = (view && view.events) || [];
+  if (fx.duel !== view.id) {
+    fx = { duel: view.id, lastId: events.length ? events[events.length - 1].id : 0, queue: [], playing: false };
+    $('fx').classList.add('hidden');
+    return;
+  }
+  const fresh = events.filter((e) => e.id > fx.lastId);
+  if (!fresh.length) return;
+  fx.lastId = fresh[fresh.length - 1].id;
+  // Cards moving the same way at the same time (Raigeki, Heavy Storm...) play as one step.
+  for (const e of fresh) {
+    const last = fx.queue[fx.queue.length - 1];
+    if (last && e.kind !== 'activate' && last.kind === e.kind && last.player === e.player && 'code' in e && last.items.length < 6 && !last.started) last.items.push(e);
+    else fx.queue.push({ kind: e.kind, player: e.player, items: [e], started: false });
+  }
+  if (!fx.playing) playNextFx();
+}
+
+function playNextFx() {
+  const box = $('fx');
+  const step = fx.queue.shift();
+  if (!step || !view) {
+    fx.playing = false;
+    box.classList.add('hidden');
+    render(); // questions and the result wait until the animations are done
+    return;
+  }
+  fx.playing = true;
+  step.started = true;
+  const who = view.players[step.player] ? view.players[step.player].name : '';
+  box.className = `fx fx-${step.kind}`;
+  box.replaceChildren();
+  if (step.kind === 'damage' || step.kind === 'recover') {
+    const amount = step.items.reduce((n, e) => n + e.amount, 0);
+    box.append(el('div', 'fx-amount', `${step.kind === 'damage' ? '-' : '+'}${amount} LP`), el('div', 'fx-label', who));
+  } else {
+    const row = el('div', 'fx-cards');
+    for (const e of step.items) row.appendChild(cardEl({ code: e.code, faceDown: !e.code, defense: false }, { allowRotate: false, peek: false }));
+    const first = step.items[0];
+    const name = first.code ? cardInfo(first.code)?.name || 'a card' : 'a Set card';
+    const label = step.kind === 'activate'
+      ? `${who} activates ${name}`
+      : `${FX_LABEL[step.kind] || ''}${step.items.length > 1 ? ` (${step.items.length})` : ''}`;
+    box.append(row, el('div', 'fx-label', label));
+  }
+  // Long chains play faster, so the animations never eat much of anyone's clock.
+  const time = FX_TIME[step.kind] || 1000;
+  setTimeout(playNextFx, fx.queue.length >= 3 ? Math.min(time, 650) : time);
+}
+
 function renderWinner() {
   const box = $('winner');
-  if (view.winner === null) {
+  if (view.winner === null || fx.playing) {
     box.classList.add('hidden');
     return;
   }
@@ -925,7 +986,8 @@ function renderWinner() {
   let text = view.winner === 2 ? 'The duel is a draw!' : `${view.players[view.winner].name} wins!`;
   if (mode === 'online' && view.winner !== 2) text = view.winner === me() ? 'You win!' : `You lose. ${view.players[view.winner].name} wins.`;
   $('winner-text').textContent = text;
-  $('btn-again').textContent = mode === 'online' ? 'Back to menu' : 'Play again';
+  $('winner-reason').textContent = view.endReason ? `${view.endReason}.` : '';
+  $('btn-again').textContent = 'Back to menu';
 }
 
 // ------------------------------------------------------------------ start screen / lobby
@@ -1193,6 +1255,7 @@ function render() {
     if (mode !== null) $('prompt').replaceChildren(el('div', 'error', requestError || 'Starting duel...'));
     return;
   }
+  queueEvents(); // first, so a new question waits for the animations
   const actions = actionMap();
   renderHeader();
   renderSide(me(), 'side-0', actions);
