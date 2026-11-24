@@ -443,7 +443,8 @@ const server = createServer(async (req, res) => {
 server.requestTimeout = 0;
 server.headersTimeout = 60_000;
 
-server.listen(PORT, () => {
+// HOST=127.0.0.1 on the public server: only Caddy (HTTPS, same machine) can reach the game directly.
+server.listen(PORT, process.env.HOST || undefined, () => {
   console.log(`\nYugs is running. Open this address in your browser:\n\n    http://localhost:${PORT}\n`);
   const lan = lanUrls();
   if (lan.length) console.log(`Phones and other computers on the same Wi-Fi can use:\n\n${lan.map((u) => `    ${u}`).join('\n')}\n`);
