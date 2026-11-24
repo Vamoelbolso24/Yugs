@@ -1006,16 +1006,20 @@ function playNextFx() {
     const e = step.items[0];
     if (e.code) showDetail(e.code);
     const rect = step.from.get(e.id) || rectNow(e.at);
-    let still = cardAt(e.at);
-    if (still && still.classList.contains('back')) still = null; // a Set card being flipped: show it face-up over it
+    // Only cards already on the field animate: face-up ones glow in place, Set ones show face-up over themselves.
+    // A card played straight from the hand has no animation (it would look like it jumps to the field).
+    let still = e.at.location === LOC.HAND ? null : cardAt(e.at);
     let g = null;
-    if (still && e.at.location !== LOC.HAND) still.classList.add('fx-activating'); // still on the field: light it up there
-    else if (rect) { g = ghost(e.code, rect); g.classList.add('fx-activating'); }  // already gone (or from the hand): show it where it was
+    if (still && still.classList.contains('back')) {
+      if (rect) { g = ghost(e.code, rect); g.classList.add('fx-activating'); }
+      still = null;
+    } else if (still) still.classList.add('fx-activating');
+    const time = still || g ? (fast ? 500 : 1000) : (fast ? 200 : 500); // from the hand: just a short pause on the card panel
     setTimeout(() => {
       if (still) still.classList.remove('fx-activating');
       if (g) g.remove();
       playNextFx();
-    }, fast ? 500 : 1000);
+    }, time);
     return;
   }
   // Cards moving: each flies from where it was to its new pile / zone / hand.
