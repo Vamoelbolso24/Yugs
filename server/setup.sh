@@ -107,18 +107,7 @@ systemctl enable --now yugs
 systemctl restart yugs
 
 step "HTTPS (Caddy gets a free certificate by itself)"
-cat > /etc/caddy/Caddyfile <<CADDY
-$DOMAIN {
-	encode gzip
-	reverse_proxy 127.0.0.1:3000 {
-		flush_interval -1
-	}
-}
-
-www.$DOMAIN {
-	redir https://$DOMAIN{uri} permanent
-}
-CADDY
+cp "$APP/server/Caddyfile" /etc/caddy/Caddyfile
 systemctl enable caddy >/dev/null 2>&1
 systemctl reload caddy || systemctl restart caddy
 

@@ -27,6 +27,13 @@ echo "== Card data"
 for name in CardScripts BabelCDB; do sudo -u yugs git -C "vendor/$name" pull --ff-only || true; done
 echo "== Packages"
 sudo -u yugs npm ci --omit=dev --no-audit --no-fund
+echo "== HTTPS settings"
+if ! cmp -s "$APP/server/Caddyfile" /etc/caddy/Caddyfile; then
+  cp "$APP/server/Caddyfile" /etc/caddy/Caddyfile
+  systemctl reload caddy && echo "Caddy settings updated."
+else
+  echo "(unchanged)"
+fi
 echo "== Restarting"
 systemctl restart yugs
 sleep 3

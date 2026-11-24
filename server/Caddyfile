@@ -1,0 +1,15 @@
+# HTTPS for Yugs. yugs-update copies this to /etc/caddy/Caddyfile and reloads Caddy.
+# Caddy gets and renews the free certificate by itself. No access log is kept (see the privacy page).
+playgrounddueling.com {
+	# Compress pages and scripts, but never the live connections (/api/...): compressing
+	# holds back duel and chat updates instead of sending them right away.
+	@static not path /api/*
+	encode @static gzip
+	reverse_proxy 127.0.0.1:3000 {
+		flush_interval -1
+	}
+}
+
+www.playgrounddueling.com {
+	redir https://playgrounddueling.com{uri} permanent
+}

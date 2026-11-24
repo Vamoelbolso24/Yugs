@@ -204,7 +204,8 @@ function connectRoom(roomId) {
   if (!seatInfo) return;
   if (online && online.source) online.source.close();
   mode = 'online';
-  online = { roomId, token: seatInfo.token, seat: seatInfo.seat, state: null, source: null, connected: false };
+  online = { roomId, token: seatInfo.token, seat: seatInfo.seat, state: null, source: null, connected: false, connectSince: Date.now() };
+  setTimeout(() => { if (online && online.roomId === roomId && !online.state) render(); }, 8500);
   history.replaceState(null, '', `/?room=${encodeURIComponent(roomId)}`);
   const source = new EventSource(`/api/room/${encodeURIComponent(roomId)}/events?token=${encodeURIComponent(seatInfo.token)}`);
   online.source = source;
@@ -1065,6 +1066,17 @@ function renderLobby() {
   if (mode === 'online') {
     if (status === 'starting') {
       box.appendChild(el('p', '', 'Your opponent joined. Shuffling decks...'));
+      return;
+    }
+    // Not connected yet, or a ranked duel (both players are already in it): never show the invite links.
+    if (!online.state || online.state.ranked || (online.state.seats && online.state.seats[1])) {
+      box.appendChild(el('p', '', online.connected || !online.state ? 'Connecting to the duel...' : 'Reconnecting...'));
+      if (online.state === null && online.connectSince && Date.now() - online.connectSince > 8000) {
+        box.appendChild(el('p', 'muted small', 'This is taking long. Check your internet connection; the game keeps trying.'));
+      }
+      const leave = el('button', 'secondary', 'Back to menu');
+      leave.addEventListener('click', goToMenu);
+      box.appendChild(leave);
       return;
     }
     box.appendChild(el('h2', '', 'Waiting for your opponent'));
