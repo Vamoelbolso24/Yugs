@@ -138,6 +138,7 @@ function renderHome(box) {
     button('Card images', () => { screen = 'images'; menuMessage = ''; render(); }, 'secondary'),
     button('How Yugs works', () => { screen = 'tutorial'; render(); }, 'secondary'),
     button('Report a bug', () => openBugReport(), 'secondary'),
+    button('Rules & privacy', () => openRules(), 'secondary'),
   );
   if (currentUser.isAdmin) grid.append(
     button('Test duel (admin)', () => { screen = 'test'; lobbyError = ''; render(); }, 'secondary admin'),

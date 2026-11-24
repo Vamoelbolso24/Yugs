@@ -3,6 +3,7 @@
 //   GET  /api/admin/players/:id           one player in detail (decks, recent packs)
 //   POST /api/admin/players/:id/ban       { days: number | null (null = forever), reason }
 //   POST /api/admin/players/:id/unban
+//   POST /api/admin/players/:id/delete    { confirm: <their username> }  deletes the account and all its data
 // Muting in chat uses the chat API: POST /api/admin/chat/mute { username, minutes }.
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Accounts } from '../auth/accounts.ts';
@@ -69,6 +70,15 @@ export function createAdminPlayers(deps: {
       accounts.ban(id, days, String(b.reason ?? '').trim().slice(0, 300));
       onBanned(id);
       sendJson(res, 200, { player: view(db.prepare(`${SUMMARY} WHERE u.id = ?`).get(id)) });
+      return true;
+    }
+    if (req.method === 'POST' && parts[3] === 'delete') {
+      if (row.is_admin === 1) { sendJson(res, 400, { error: 'Admins can\'t be deleted. Remove their admin rights first.' }); return true; }
+      const b = await readBody(req);
+      if (String(b.confirm ?? '') !== row.username) { sendJson(res, 400, { error: `Type ${row.username} exactly to confirm.` }); return true; }
+      onBanned(id); // ends their duels and queue spot first
+      accounts.deleteAccount(id);
+      sendJson(res, 200, { deleted: row.username });
       return true;
     }
     if (req.method === 'POST' && parts[3] === 'unban') {

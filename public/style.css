@@ -496,3 +496,11 @@ button.admin { border-color: var(--accent); color: var(--accent); }
 .player-detail .button-row { flex-wrap: wrap; align-items: center; }
 .player-detail .button-row .text-input { flex: 1 1 200px; width: auto; min-width: 0; }
 button.danger { background: #c0392b; color: #fff; }
+.danger-zone { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; }
+.danger-zone summary { cursor: pointer; color: var(--danger); }
+.danger-zone .button-row .text-input { flex: 1 1 200px; width: auto; min-width: 0; }
+.rules-box { width: min(680px, 94vw); max-height: 88vh; }
+.rules-body { overflow-y: auto; padding-right: 6px; }
+.rules-body h3 { margin: 14px 0 6px; }
+.rules-body h3:first-child { margin-top: 0; }
+.footer a.rules-link, .auth-form a.rules-link { color: var(--accent); }

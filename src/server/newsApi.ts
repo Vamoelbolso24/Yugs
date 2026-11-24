@@ -1,5 +1,5 @@
 // Main page: news posts (admins write them) and the tutorial (content/tutorial.md, edit it by hand).
-//   GET    /api/news                  -> { news: [...latest 20], tutorial, homeNote (markdown) }   (anyone)
+//   GET    /api/news                  -> { news: [...latest 20], tutorial, homeNote, rules (markdown) }   (anyone)
 //   POST   /api/admin/news            { title, body }        (admins)
 //   PUT    /api/admin/news/:id        { title, body }
 //   DELETE /api/admin/news/:id
@@ -22,6 +22,7 @@ export function createNewsApi(deps: { accounts: Accounts; db: Db; sendJson: Send
   const tutorial = () => file('tutorial.md');
   /** The short note at the top of the main page (content/home-note.md). */
   const homeNote = () => file('home-note.md');
+  const rules = () => file('rules.md');
   const clean = (b: Record<string, unknown>) => {
     const title = String(b.title ?? '').trim().slice(0, 120);
     const body = String(b.body ?? '').trim().slice(0, 5000);
@@ -30,7 +31,7 @@ export function createNewsApi(deps: { accounts: Accounts; db: Db; sendJson: Send
 
   return async function handle(req: IncomingMessage, res: ServerResponse, parts: string[]): Promise<boolean> {
     if (parts[0] === 'news' && parts.length === 1 && req.method === 'GET') {
-      sendJson(res, 200, { news: list(), tutorial: tutorial(), homeNote: homeNote() });
+      sendJson(res, 200, { news: list(), tutorial: tutorial(), homeNote: homeNote(), rules: rules() });
       return true;
     }
     if (parts[0] !== 'admin' || parts[1] !== 'news') return false;
@@ -55,7 +56,7 @@ export function createNewsApi(deps: { accounts: Accounts; db: Db; sendJson: Send
       sendJson(res, 404, { error: 'Unknown request.' });
       return true;
     }
-    sendJson(res, 200, { news: list(), tutorial: tutorial(), homeNote: homeNote() });
+    sendJson(res, 200, { news: list(), tutorial: tutorial(), homeNote: homeNote(), rules: rules() });
     return true;
   };
 }

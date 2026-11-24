@@ -1041,7 +1041,12 @@ function renderLobby() {
     }
     const pass = input(authTab === 'register' ? 'Password (at least 8 characters)' : 'Password', 'password', authTab === 'register' ? 'new-password' : 'current-password', 200);
     form.appendChild(pass);
-    if (authTab === 'register') form.appendChild(el('p', 'muted small', 'Usernames: 3-20 letters, numbers, _ or -. Your email is only used for codes and password resets; other players never see it.'));
+    if (authTab === 'register') {
+      form.appendChild(el('p', 'muted small', 'Usernames: 3-20 letters, numbers, _ or -. Your email is only used for codes and password resets; other players never see it.'));
+      const agree = el('p', 'muted small');
+      agree.append('By creating an account you agree to the ', rulesLink('rules and privacy notice'), '.');
+      form.appendChild(agree);
+    }
     return finish(user, authTab === 'register' ? 'Create account' : 'Log in',
       () => submitAuth(authTab, user.value.trim(), pass.value, email ? email.value.trim() : ''),
       authTab === 'login' ? [linkButton('Forgot password?', () => { authStep = { kind: 'forgot' }; })] : []);

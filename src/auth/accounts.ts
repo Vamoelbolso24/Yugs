@@ -286,6 +286,10 @@ export class Accounts {
       return { ok: false, error: 'That username or email is taken.' };
     }
     this.signupLimiter.fail([`a:${address}`]);
+    // A new account can get the number of a deleted one: forget that one's email timers.
+    this.lastMail.delete(`${id}:verify`);
+    this.lastMail.delete(`${id}:reset`);
+    this.mailLimiter.clear([`m:${id}`]);
     const sent = await this.sendCode(id, 'verify', e!, address);
     if (!sent.ok) {
       this.db.prepare('DELETE FROM email_codes WHERE user_id = ?').run(id);
@@ -367,6 +371,21 @@ export class Accounts {
     const until = days === null ? BAN_FOREVER : Date.now() + days * 86_400_000;
     this.db.prepare('UPDATE users SET banned_until = ?, ban_reason = ? WHERE id = ?').run(until, reason || null, userId);
     this.db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+  }
+
+  /** Admin tool (player asked for it): deletes the account and everything linked to it. */
+  deleteAccount(userId: number): void {
+    this.db.exec('BEGIN');
+    try {
+      for (const table of ['email_codes', 'chat_messages', 'bug_reports', 'sessions', 'collection', 'decks', 'pack_openings']) {
+        this.db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
+      }
+      this.db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+      this.db.exec('COMMIT');
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
   }
 
   unban(userId: number): void {

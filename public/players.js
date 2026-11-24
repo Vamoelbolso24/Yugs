@@ -90,6 +90,24 @@ function renderPlayerDetail(box, d) {
       ? button('Unmute', () => playerAction('/api/admin/chat/mute', { username: p.username, minutes: 0 }, `${p.username} can chat again.`), 'secondary')
       : button('Mute in chat 24 h', () => playerAction('/api/admin/chat/mute', { username: p.username, minutes: 1440 }, `${p.username} is muted for 24 hours.`), 'secondary'));
     card.appendChild(row);
+
+    const del = el('details', 'danger-zone');
+    del.appendChild(el('summary', 'small', 'Delete this account'));
+    del.appendChild(el('p', 'muted small', 'Only when the player asks for it (from the email of the account). This deletes the account, collection, decks, packs, chat messages and bug reports. It cannot be undone.'));
+    const confirmName = el('input', 'text-input');
+    confirmName.placeholder = `Type ${p.username} to confirm`;
+    const delRow = el('div', 'button-row');
+    delRow.append(confirmName, button('Delete forever', async () => {
+      const { ok, data } = await api('POST', `/api/admin/players/${p.id}/delete`, { confirm: confirmName.value.trim() });
+      if (!ok) { playersView.message = data.error; render(); return; }
+      playersView.openId = null;
+      playersView.detail = null;
+      playersView.list = null;
+      playersView.message = `${data.deleted}'s account was deleted.`;
+      render();
+    }, 'danger'));
+    del.appendChild(delRow);
+    card.appendChild(del);
   }
   box.appendChild(card);
 }
