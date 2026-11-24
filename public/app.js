@@ -317,6 +317,7 @@ function cardInfo(code) {
 function cardEl(card, opts = {}) {
   const info = card.code ? cardInfo(card.code) : null;
   const e = el('div', 'card');
+  if (card.code && !card.faceDown) e.dataset.code = String(card.code);
   if (card.faceDown || !info) {
     e.classList.add('back');
     e.appendChild(el('div', 'swirl'));
@@ -693,11 +694,28 @@ function renderActions() {
     b.appendChild(document.createTextNode(` ${t.main.slice(c.label.length + 1)}`));
     if (t.sub) b.title = t.sub;
     if (c.card && c.card.code) b.addEventListener('mouseenter', () => showDetail(c.card.code));
-    b.addEventListener('click', () => answer([c.id]));
+    // A click from this list only asks first; the engine can't take a summon back once it has started.
+    const confirming = actionConfirm && actionConfirm.decision === d.id && actionConfirm.choice === c.id;
+    if (confirming) {
+      const row = el('div', 'action-confirm');
+      row.appendChild(el('div', 'action-confirm-text', `${t.main}?`));
+      const yes = el('button', '', 'Confirm');
+      yes.addEventListener('click', () => { actionConfirm = null; answer([c.id]); });
+      const no = el('button', 'secondary', 'Cancel');
+      no.addEventListener('click', () => { actionConfirm = null; renderActions(); });
+      const buttons = el('div', 'button-row');
+      buttons.append(yes, no);
+      row.appendChild(buttons);
+      box.appendChild(row);
+      continue;
+    }
+    b.addEventListener('click', () => { actionConfirm = { decision: d.id, choice: c.id }; renderActions(); });
     box.appendChild(b);
   }
   box.appendChild(phaseRow);
 }
+/** The action picked from the list that waits for Confirm / Cancel. */
+let actionConfirm = null;
 
 function renderModal() {
   const modal = $('modal');
@@ -961,7 +979,7 @@ function queueEvents() {
   // Each activation is its own step; cards moving one after another (Raigeki, a resolving chain) fly together.
   for (const e of fresh) {
     const last = fx.queue[fx.queue.length - 1];
-    if (e.kind !== 'activate' && last && last.kind === 'move' && !last.started) last.items.push(e);
+    if (e.kind !== 'activate' && last && last.kind === 'move' && last.items[0].kind === e.kind && !last.started) last.items.push(e);
     else fx.queue.push({ kind: e.kind === 'activate' ? 'activate' : 'move', items: [e], started: false, from: new Map() });
     // Where the card was, measured now (before the board is redrawn).
     const step = fx.queue[fx.queue.length - 1];
@@ -975,6 +993,15 @@ function runFx() {
   if (!fx.playing || fx.running) return;
   fx.running = true;
   playNextFx();
+}
+
+/** A card played from the hand: hide it there (yours by its name; the opponent's hidden hand, one card back). */
+function hideHandCard(player, code) {
+  const hand = document.querySelector(`[data-zone="${player}-${LOC.HAND}"]`);
+  if (!hand) return;
+  const cards = [...hand.querySelectorAll('.card')].filter((c) => c.style.visibility !== 'hidden');
+  const match = cards.find((c) => c.dataset.code === String(code)) || cards.filter((c) => c.classList.contains('back')).pop();
+  if (match) match.style.visibility = 'hidden';
 }
 
 /** The card element shown at a place on the board right now (a zone's card, or that card in the hand). */
@@ -1005,19 +1032,28 @@ function playNextFx() {
   if (step.kind === 'activate') {
     const e = step.items[0];
     if (e.code) showDetail(e.code);
-    const rect = step.from.get(e.id) || rectNow(e.at);
-    // Only cards already on the field animate: face-up ones glow in place, Set ones show face-up over themselves.
-    // A card played straight from the hand has no animation (it would look like it jumps to the field).
-    let still = e.at.location === LOC.HAND ? null : cardAt(e.at);
-    let g = null;
-    if (still && still.classList.contains('back')) {
-      if (rect) { g = ghost(e.code, rect); g.classList.add('fx-activating'); }
-      still = null;
-    } else if (still) still.classList.add('fx-activating');
-    const time = still || g ? (fast ? 500 : 1000) : (fast ? 200 : 500); // from the hand: just a short pause on the card panel
+    // Like EDOPro, the card sits in its zone, face-up, until its effect has played out and it moves on:
+    // a Set card turns face-up in place, a card played from the hand appears in its zone (and leaves the hand).
+    let still = null;
+    if (e.at.location !== LOC.HAND) {
+      const zoneNode = document.querySelector(`[data-zone="${zoneKey(e.at)}"]`);
+      still = zoneNode ? zoneNode.querySelector('.card') : null;
+      if (zoneNode && (!still || still.classList.contains('back')) && e.code) {
+        const faceUp = cardEl({ code: e.code, faceDown: false, defense: false }, { allowRotate: false });
+        if (still) still.replaceWith(faceUp);
+        else {
+          const label = zoneNode.querySelector('.label');
+          if (label) label.remove();
+          zoneNode.appendChild(faceUp);
+          hideHandCard(e.player, e.code);
+        }
+        still = faceUp;
+      }
+    }
+    if (still) still.classList.add('fx-activating');
+    const time = still ? (fast ? 500 : 1000) : (fast ? 200 : 500); // a hand effect: just a short pause on the card panel
     setTimeout(() => {
-      if (still) still.classList.remove('fx-activating');
-      if (g) g.remove();
+      if (still) still.classList.remove('fx-activating'); // it stays in its zone; a later step moves it
       playNextFx();
     }, time);
     return;

@@ -537,3 +537,7 @@ button.danger { background: #c0392b; color: #fff; }
   .winner { top: 8px; width: 94vw; }
 }
 }
+.action-confirm { border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; background: rgba(var(--accent-rgb), .08); display: flex; flex-direction: column; gap: 8px; }
+.action-confirm-text { font-weight: 600; }
+.action-confirm .button-row { display: flex; gap: 8px; }
+.action-confirm .button-row button { flex: 1; }
