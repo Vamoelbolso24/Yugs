@@ -136,6 +136,7 @@ cat > /usr/local/bin/yugs-restart <<'SH'
 #!/usr/bin/env bash
 # Restart the game (also fixes file owners after copying pictures in).
 chown -R yugs:yugs /opt/yugs/app/content
+chmod -R u+rwX,go+rX /opt/yugs/app/content
 systemctl restart yugs
 sleep 3
 systemctl --no-pager --lines=5 status yugs | head -8 || true

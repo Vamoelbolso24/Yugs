@@ -4,6 +4,9 @@
 set -euo pipefail
 APP=/opt/yugs/app
 cd "$APP"
+# Files copied in as root (pictures, logo) must belong to the game's own account.
+chown -R yugs:yugs "$APP/content"
+chmod -R u+rwX,go+rX "$APP/content"
 echo "== Backup first"
 sudo -u yugs /bin/bash "$APP/server/backup.sh"
 G="sudo -u yugs git -c user.name=Yugs-server -c user.email=server@localhost"
