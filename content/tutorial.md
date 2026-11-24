@@ -12,7 +12,6 @@ Yugs is a free Yu-Gi-Oh! duel website with its own collection, packs, ranked lad
 
 - **Find a duel (ranked)** pairs you with a player of similar rating. The longer you wait, the wider the search; after a minute anyone can be your opponent.
 - **Duel a friend** makes an invite link to send to someone. Friendly duels are just for fun: no coins, no ELO, and they don't count toward packs.
-- **Practice** and **Duel vs Bot** let you try decks on your own.
 - **The clock:** in online duels each player has **3 minutes for the whole duel**, plus **3 seconds back after every decision**. Your clock only runs while the game is waiting for you. If it reaches 0, you lose.
 - **Leaving:** if you close the duel for more than 2 minutes, you lose.
 - **Responding to your opponent:** click a glowing card to activate it. The menu next to your name sets how often the game stops to ask if you want to respond: "when something happens" (recommended), "always" or "never".

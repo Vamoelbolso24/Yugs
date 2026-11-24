@@ -103,7 +103,6 @@ function renderMenus(box) {
   if (screen === 'tutorial') return renderTutorial(box);
   if (screen === 'reports' && currentUser.isAdmin) return renderReports(box);
   if (screen === 'players' && currentUser.isAdmin) return renderPlayers(box);
-  if (screen === 'bot') return renderBotSetup(box);
   if (screen === 'test' && currentUser.isAdmin) return renderTestSetup(box);
   if (screen === 'packmaker' && currentUser.isAdmin) return renderPackMaker(box);
   if (screen === 'banlist' && currentUser.isAdmin) return renderBanlistEditor(box);
@@ -134,8 +133,6 @@ function renderHome(box) {
     button('Duel a friend (invite link)', createOnline, 'secondary'),
     button('Deck editor', () => { screen = 'decks'; menuMessage = ''; render(); }, 'secondary'),
     button(profile.freePacks > 0 ? 'Open packs' : 'Packs', () => { screen = 'packs'; menuMessage = ''; render(); }, 'secondary'),
-    button('Duel vs Bot', () => { screen = 'bot'; lobbyError = ''; render(); }, 'secondary'),
-    button('Practice duel (you play both sides)', startPractice, 'secondary'),
     button('Standings', () => { screen = 'standings'; standings = null; menuMessage = ''; render(); }, 'secondary'),
     button('Card images', () => { screen = 'images'; menuMessage = ''; render(); }, 'secondary'),
     button('How Yugs works', () => { screen = 'tutorial'; render(); }, 'secondary'),
@@ -169,7 +166,7 @@ function renderMaintenanceAdmin(box) {
   const top = el('div', 'screen-top');
   top.append(el('h2', '', 'Maintenance mode'), button('Back', () => { screen = 'home'; menuMessage = ''; render(); }, 'secondary'));
   box.appendChild(top);
-  box.appendChild(el('p', 'muted small', 'Turn this on a few minutes before you update the server. Players can\'t start new duels (online, ranked, practice or bot) and see your message instead of the menus; duels already running can be finished. You can still do everything. It stays on after a restart until you turn it off.'));
+  box.appendChild(el('p', 'muted small', 'Turn this on a few minutes before you update the server. Players can\'t start new duels (ranked or with a friend) and see your message instead of the menus; duels already running can be finished. You can still do everything. It stays on after a restart until you turn it off.'));
   const msg = el('textarea', 'text-input');
   msg.rows = 3;
   msg.maxLength = 500;
@@ -835,40 +832,7 @@ function renderImages(box) {
   box.append(input, row);
 }
 
-// ------------------------------------------------------------------ duel vs bot
-
-let botDeckId = null;
-
-function renderBotSetup(box) {
-  const top = el('div', 'screen-top');
-  top.append(el('h2', '', 'Duel vs Bot'), button('Back', () => { screen = 'home'; render(); }, 'secondary'));
-  box.appendChild(top);
-  box.appendChild(el('p', 'muted', 'A very simple practice bot: it plays legal moves but not smart ones. Good for trying out decks and cards.'));
-  if (!need('decks')) return;
-  const active = cache.decks.find((d) => d.active);
-  box.appendChild(el('p', '', `You play: ${active ? active.name : 'no active deck'}`));
-  const usable = cache.decks.filter((d) => !d.problems.length);
-  if (!usable.length) {
-    box.appendChild(el('p', 'error', 'You need at least one finished deck.'));
-    return;
-  }
-  if (!usable.some((d) => d.id === botDeckId)) botDeckId = usable[0].id;
-  const label = el('label', 'field-label', 'The bot plays:');
-  const select = el('select', 'text-input');
-  for (const d of usable) {
-    const o = el('option', '', d.name);
-    o.value = String(d.id);
-    if (d.id === botDeckId) o.selected = true;
-    select.appendChild(o);
-  }
-  select.addEventListener('change', () => { botDeckId = Number(select.value); });
-  label.appendChild(select);
-  box.appendChild(label);
-  if (lobbyError) box.appendChild(el('div', 'error', lobbyError));
-  box.appendChild(button('Start duel', () => startLocalDuel({ mode: 'bot', botDeckId })));
-}
-
-/** Starts a local duel (vs bot or admin test) and shows the board. */
+/** Starts an admin test duel and shows the board. */
 async function startLocalDuel(body) {
   lobbyError = '';
   const { ok, data } = await api('POST', '/api/duel', body);

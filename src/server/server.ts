@@ -24,7 +24,6 @@ import { PlayerData } from '../game/playerData.ts';
 import { createPlayerApi } from './playerApi.ts';
 import { CUSTOM_PICS_DIR, customScriptReader } from '../content/customCards.ts';
 import { setCustomScriptReader } from '../engine/scriptReader.ts';
-import { KAIBA_DECK, YUGI_DECK, expandDeck, type DeckCodes } from '../decks/starters.ts';
 import { CARD_DB_FILES, ROOT } from '../paths.ts';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -330,9 +329,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
   // GET /api/info
   if (req.method === 'GET' && parts[0] === 'info') return sendJson(res, 200, { lanUrls: lanUrls() });
 
-  // POST /api/duel  { mode, ... }  -> start a local duel
-  //   mode 'hotseat' (default): Yugi vs Kaiba, you play both sides
-  //   mode 'bot':  your active deck vs the bot, which plays { botDeckId } (one of your decks)
+  // POST /api/duel  { mode: 'test', ... }  -> start a local duel
   //   mode 'test': admins only. { deckA, deckB, hand: [card codes] } you play both sides,
   //                deck A starts with the given cards in hand. Ownership is not checked.
   if (req.method === 'POST' && parts.length === 1 && parts[0] === 'duel') {
@@ -340,20 +337,6 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
     const body = await readBody(req);
     const seed = typeof body.seed === 'number' ? body.seed : undefined;
     const user = accounts.userFromRequest(req);
-    if (body.mode === 'bot') {
-      if (!user) return sendJson(res, 401, { error: 'Log in to duel the bot.' });
-      const mine = players.duelDeck(user.id);
-      if (!mine.ok) return sendJson(res, 409, { error: mine.error });
-      const botDeck = players.decks(user.id).find((d) => d.id === body.botDeckId);
-      if (!botDeck || botDeck.problems.length) return sendJson(res, 409, { error: 'Pick a finished deck for the bot.' });
-      const human: 0 | 1 = Math.random() < 0.5 ? 0 : 1; // coin toss
-      const bot = (1 - human) as 0 | 1;
-      const decks: [DeckCodes, DeckCodes] = human === 0 ? [mine.value, botDeck] : [botDeck, mine.value];
-      const names: [string, string] = human === 0 ? [user.username, 'Bot'] : ['Bot', user.username];
-      const session = await DuelSession.start(cards, { decks, names, seed, bots: [bot] });
-      addLocalDuel(session, user.id, `u:${user.id}`, human);
-      return sendJson(res, 200, session.view(human));
-    }
     if (body.mode === 'test') {
       if (!user?.isAdmin) return sendJson(res, 403, { error: 'Test duels are for admins.' });
       const all = players.decks(user.id);
@@ -367,13 +350,8 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
       addLocalDuel(session, user.id, `u:${user.id}`, 'all');
       return sendJson(res, 200, session.view());
     }
-    const session = await DuelSession.start(cards, {
-      decks: [expandDeck(YUGI_DECK), expandDeck(KAIBA_DECK)],
-      names: ['Yugi', 'Kaiba'],
-      seed,
-    });
-    addLocalDuel(session, null, user ? `u:${user.id}` : `a:${clientAddress(req)}`, 'all');
-    return sendJson(res, 200, session.view());
+    // Practice (hotseat) and vs-bot duels were removed for the public game; a better bot may come back later.
+    return sendJson(res, 404, { error: 'Practice and bot duels are not available. Find a duel or invite a friend.' });
   }
 
   // Anything else that isn't a duel: say so (an old server that wasn't restarted after an update ends up here).

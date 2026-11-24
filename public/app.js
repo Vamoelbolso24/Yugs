@@ -31,7 +31,7 @@ const keyOf = (controller, location, sequence) => `${controller}:${location}:${s
 
 // ------------------------------------------------------------------ server calls
 
-/** null = start screen, 'practice' = one person plays both sides, 'online' = two browsers. */
+/** null = start screen, 'practice' = an admin test duel (one person plays both sides), 'online' = two browsers. */
 let mode = null;
 /** Online duel: { roomId, token, seat, state, source, connected } */
 let online = null;
@@ -157,41 +157,6 @@ function goToMenu() {
   render();
 }
 
-// ---- practice (hotseat)
-
-async function startPractice() {
-  mode = 'practice';
-  history.replaceState(null, '', '/');
-  const saved = localStorage.getItem('yugs-duel');
-  if (saved) {
-    try {
-      const { ok, data } = await api('GET', `/api/duel/${saved}`);
-      if (ok && data.winner === null) {
-        view = data;
-        render();
-        return;
-      }
-    } catch { /* start a new one */ }
-  }
-  await newDuel();
-}
-
-async function newDuel() {
-  if (busy) return;
-  busy = true;
-  requestError = '';
-  try {
-    const { ok, data } = await api('POST', '/api/duel', {});
-    if (ok) {
-      view = data;
-      localStorage.setItem('yugs-duel', view.id);
-    } else requestError = data.error;
-  } catch {
-    requestError = 'Cannot reach the server. Is the Yugs window still open?';
-  }
-  busy = false;
-  render();
-}
 
 // ---- online
 
@@ -1129,19 +1094,16 @@ function renderLobby() {
     return;
   }
 
-  box.appendChild(el('p', 'muted', 'Yugs: Playground Dueling is in beta. Log in for ranked duels, packs and your own decks, or try a practice duel (Yugi vs Kaiba, you play both sides).'));
-  const practice = el('button', 'secondary', 'Practice duel (you play both sides)');
-  practice.addEventListener('click', startPractice);
+  box.appendChild(el('p', 'muted', 'Yugs: Playground Dueling is in beta: a free Yu-Gi-Oh! ladder with packs, your own decks and some custom cards.'));
   if (!currentUser) {
-    box.appendChild(authForm('Log in to duel other players online.'));
-    box.appendChild(practice);
+    box.appendChild(authForm('Log in or create an account to start dueling.'));
     return;
   }
   box.appendChild(userBar());
   const create = el('button', '', 'Create online duel');
   create.addEventListener('click', createOnline);
   const row = el('div', 'button-row');
-  row.append(create, practice);
+  row.append(create);
   const err = errorLine();
   if (err) box.appendChild(err);
   box.appendChild(row);
@@ -1171,7 +1133,7 @@ function copyRow(text) {
 function render() {
   renderLobby();
   $('btn-surrender').classList.toggle('hidden', !view || view.winner !== null);
-  $('btn-new').textContent = mode === 'practice' ? 'New duel' : 'Menu';
+  $('btn-new').textContent = 'Menu';
   if (view && view.players && view.players.some((pl) => !Array.isArray(pl.extra))) {
     // The page is newer than the server that is running.
     $('prompt').replaceChildren(el('div', 'error', 'The game server is out of date. Close the black Yugs window and double-click start.bat again.'));
@@ -1200,13 +1162,12 @@ function render() {
 document.addEventListener('click', closePopup);
 $('btn-new').addEventListener('click', () => {
   const inDuel = view && view.winner === null;
-  if (mode === 'practice') {
-    if (!inDuel || confirm('Start a new practice duel? The current one will be abandoned.')) newDuel();
-  } else if (!inDuel || confirm('Leave this duel and go back to the menu? You can come back with the same link in this tab.')) {
-    goToMenu();
-  }
+  const question = mode === 'practice'
+    ? 'Leave this test duel and go back to the menu?'
+    : 'Leave this duel and go back to the menu? You can come back with the same link in this tab.';
+  if (!inDuel || confirm(question)) goToMenu();
 });
-$('btn-again').addEventListener('click', () => (mode === 'online' ? goToMenu() : newDuel()));
+$('btn-again').addEventListener('click', () => goToMenu());
 $('btn-surrender').addEventListener('click', surrender);
 $('btn-report').addEventListener('click', () => openBugReport());
 
