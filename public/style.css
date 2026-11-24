@@ -486,3 +486,13 @@ button.admin { border-color: var(--accent); color: var(--accent); }
 .add-email p { margin: 4px 0 8px; }
 .add-email-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .add-email-form .text-input { flex: 1 1 200px; min-width: 0; }
+
+/* Admin: players */
+.player-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.player-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; text-align: left; background: var(--panel-2); color: inherit; border: 1px solid var(--line); font-weight: 400; }
+.player-row:hover { border-color: var(--accent); }
+.tag.bad { color: #ff6b6b; border-color: #ff6b6b; }
+.player-detail .facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 10px 0; }
+.player-detail .button-row { flex-wrap: wrap; align-items: center; }
+.player-detail .button-row .text-input { flex: 1 1 200px; width: auto; min-width: 0; }
+button.danger { background: #c0392b; color: #fff; }

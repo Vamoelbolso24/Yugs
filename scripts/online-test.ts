@@ -5,6 +5,7 @@
 import { createRng } from '../src/engine/random.ts';
 import type { RoomState } from '../src/server/rooms.ts';
 import type { GameView } from '../src/game/types.ts';
+import { testSignup } from './test-signup.ts';
 
 const duels = Number(process.argv[2] ?? 3);
 const BASE = process.argv[3] ?? 'http://localhost:3000';
@@ -18,7 +19,7 @@ async function post(path: string, body: unknown, cookie = ''): Promise<{ status:
 /** Creates a fresh test account and returns its login cookie. */
 async function account(prefix: string): Promise<string> {
   const name = `${prefix}${Math.random().toString(36).slice(2, 8)}`;
-  const r = await post('/api/auth/register', { username: name, password: 'testpassword' });
+  const r = await testSignup(BASE, name, 'testpassword');
   if (r.status !== 200) throw new Error('register failed: ' + JSON.stringify(r.data));
   const starter = ['yugi', 'kaiba', 'joey'][Math.floor(Math.random() * 3)];
   const chosen = await post('/api/starters/choose', { starterId: starter }, r.cookie);

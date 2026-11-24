@@ -86,7 +86,7 @@ function button(label, onClick, cls = '') {
 
 function renderMenus(box) {
   const lobbyBox = $('lobby-box');
-  lobbyBox.classList.toggle('wide', !!(profile && profile.starterChosen && ['packs', 'decks', 'test', 'packmaker', 'banlist', 'standings', 'tutorial', 'reports'].includes(screen)));
+  lobbyBox.classList.toggle('wide', !!(profile && profile.starterChosen && ['packs', 'decks', 'test', 'packmaker', 'banlist', 'standings', 'tutorial', 'reports', 'players'].includes(screen)));
   if (!profile) {
     box.appendChild(el('p', 'muted', 'Loading your profile...'));
     loadProfile();
@@ -100,6 +100,7 @@ function renderMenus(box) {
   if (screen === 'matching') return renderMatching(box);
   if (screen === 'tutorial') return renderTutorial(box);
   if (screen === 'reports' && currentUser.isAdmin) return renderReports(box);
+  if (screen === 'players' && currentUser.isAdmin) return renderPlayers(box);
   if (screen === 'bot') return renderBotSetup(box);
   if (screen === 'test' && currentUser.isAdmin) return renderTestSetup(box);
   if (screen === 'packmaker' && currentUser.isAdmin) return renderPackMaker(box);
@@ -142,6 +143,7 @@ function renderHome(box) {
     button('Test duel (admin)', () => { screen = 'test'; lobbyError = ''; render(); }, 'secondary admin'),
     button('Pack Maker (admin)', () => { screen = 'packmaker'; menuMessage = ''; render(); }, 'secondary admin'),
     button('Banlist editor (admin)', () => { screen = 'banlist'; menuMessage = ''; render(); }, 'secondary admin'),
+    button('Players (admin)', () => { screen = 'players'; playersView.list = null; playersView.openId = null; menuMessage = ''; render(); }, 'secondary admin'),
     button('Bug reports (admin)', () => { screen = 'reports'; reportsView.data = null; menuMessage = ''; render(); }, 'secondary admin'),
   );
   box.appendChild(grid);

@@ -1,5 +1,6 @@
 // Private settings that must never be committed (API keys). They live in config.local.json
 // next to package.json; git ignores that file. Copy config.local.example.json to start.
+// Test servers can point elsewhere with YUGS_CONFIG=<file> (a missing file = no emails, codes printed).
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './paths.ts';
@@ -14,7 +15,7 @@ export interface LocalSettings {
 export function loadLocalSettings(): LocalSettings {
   const defaults: LocalSettings = { resendApiKey: '', emailFrom: 'Yugs <no-reply@playgrounddueling.com>' };
   try {
-    const raw = JSON.parse(readFileSync(path.join(ROOT, 'config.local.json'), 'utf8')) as Partial<LocalSettings>;
+    const raw = JSON.parse(readFileSync(process.env.YUGS_CONFIG ?? path.join(ROOT, 'config.local.json'), 'utf8')) as Partial<LocalSettings>;
     return {
       resendApiKey: typeof raw.resendApiKey === 'string' ? raw.resendApiKey.trim() : '',
       emailFrom: typeof raw.emailFrom === 'string' && raw.emailFrom.trim() ? raw.emailFrom.trim() : defaults.emailFrom,

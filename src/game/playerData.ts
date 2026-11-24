@@ -137,7 +137,7 @@ export class PlayerData {
    * Ranked = played at least one online duel. Equal ratings share a place.
    */
   standings(userId: number, search: string, limit = 100) {
-    const RANKED = '(wins + losses + draws) > 0';
+    const RANKED = `(wins + losses + draws) > 0 AND banned_until <= ${Date.now()}`;
     const row = (r: { id: number; username: string; elo: number; wins: number; losses: number; draws: number }) => ({
       rank: (this.db.prepare(`SELECT COUNT(*) AS n FROM users WHERE ${RANKED} AND elo > ?`).get(r.elo) as { n: number }).n + 1,
       username: r.username, elo: r.elo, wins: r.wins, losses: r.losses, draws: r.draws, me: r.id === userId,

@@ -1,3 +1,4 @@
+import { testSignup } from './test-signup.ts';
 // Tests accounts over HTTP against a running server (npm start).
 // Usage:  node scripts/auth-test.ts [baseUrl]
 const BASE = process.argv[2] ?? 'http://localhost:3000';
@@ -10,14 +11,14 @@ async function call(method: string, path: string, body?: unknown, cookie = '') {
 }
 
 const name = `tester${Math.random().toString(36).slice(2, 8)}`;
-const reg = await call('POST', '/api/auth/register', { username: name, password: 'correct horse' });
+const reg = await testSignup(BASE, name, 'correct horse');
 check(reg.status === 200 && reg.data.user.username === name, 'register a new account');
 check(/HttpOnly/.test(reg.setCookie) && /SameSite=Lax/.test(reg.setCookie), 'login cookie is HttpOnly + SameSite');
 const cookie = reg.setCookie.split(';')[0]!;
 check(!JSON.stringify(reg.data).includes('password'), 'no password data sent back');
-check((await call('POST', '/api/auth/register', { username: name.toUpperCase(), password: 'another one' })).status === 400, 'duplicate username refused (any capitalization)');
-check((await call('POST', '/api/auth/register', { username: 'a b', password: 'whatever12' })).status === 400, 'invalid username refused');
-check((await call('POST', '/api/auth/register', { username: name + 'x', password: 'short' })).status === 400, 'short password refused');
+check((await call('POST', '/api/auth/register', { username: name.toUpperCase(), email: 'other@example.test', password: 'another one' })).status === 400, 'duplicate username refused (any capitalization)');
+check((await call('POST', '/api/auth/register', { username: 'a b', email: 'ab@example.test', password: 'whatever12' })).status === 400, 'invalid username refused');
+check((await call('POST', '/api/auth/register', { username: name + 'x', email: 'x@example.test', password: 'short' })).status === 400, 'short password refused');
 check((await call('GET', '/api/auth/me', undefined, cookie)).data.user?.username === name, '"me" knows who is logged in');
 check((await call('GET', '/api/auth/me')).data.user === null, 'no cookie = not logged in');
 check((await call('GET', '/api/auth/me', undefined, 'yugs_session=forged')).data.user === null, 'forged cookie refused');

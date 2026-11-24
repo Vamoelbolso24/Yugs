@@ -18,6 +18,7 @@ import { createAdminPackApi } from './adminPackApi.ts';
 import { createNewsApi } from './newsApi.ts';
 import { createChat } from './chat.ts';
 import { createReports } from './reports.ts';
+import { createAdminPlayers } from './adminPlayers.ts';
 import { PlayerData } from '../game/playerData.ts';
 import { createPlayerApi } from './playerApi.ts';
 import { CUSTOM_PICS_DIR, customScriptReader } from '../content/customCards.ts';
@@ -45,7 +46,11 @@ console.log(`Loaded ${cards.cards.size} cards.`);
 /** Local duels (practice, vs bot, admin test). viewer 'all' = one person plays both sides. */
 const sessions = new Map<string, { session: DuelSession; ownerId: number | null; viewer: 0 | 1 | 'all' }>();
 const db = openDatabase();
-const accounts = new Accounts(db, createMailer(loadLocalSettings()));
+const localSettings = loadLocalSettings();
+// YUGS_TEST_CODES=1 lets test scripts sign up without an inbox. Ignored when a real email key is set.
+const testCodes = process.env.YUGS_TEST_CODES === '1' && !localSettings.resendApiKey;
+if (testCodes) console.log('Test mode: sign-up codes are sent back to the browser. Never use this on the public server.');
+const accounts = new Accounts(db, createMailer(localSettings), testCodes);
 console.log(`Database ready (${accounts.listUsers().length} accounts).`);
 let content;
 try {
@@ -88,7 +93,7 @@ async function handleAuthApi(req: IncomingMessage, res: ServerResponse, action: 
   if (action === 'register') {
     const r = await accounts.register(body.username, body.email, body.password, address);
     if (!r.ok) return sendJson(res, 400, { error: r.error });
-    return sendJson(res, 200, { verify: true, username: r.value.username, email: r.value.email });
+    return sendJson(res, 200, { verify: true, username: r.value.username, email: r.value.email, ...(r.value.testCode ? { testCode: r.value.testCode } : {}) });
   }
   // POST /api/auth/verify { username, code }
   if (action === 'verify') {
@@ -272,6 +277,10 @@ const playerApi = createPlayerApi({ accounts, players, cards, content, sendJson,
 const newsApi = createNewsApi({ accounts, db, sendJson, readBody });
 const chatApi = createChat({ accounts, db, sendJson, readBody });
 const reportsApi = createReports({ accounts, db, sendJson, readBody });
+const adminPlayersApi = createAdminPlayers({
+  accounts, db, sendJson, readBody,
+  onBanned: (userId) => { rooms.forfeitUser(userId, 'was banned'); matchmaker.leave(userId); },
+});
 const adminPackApi = createAdminPackApi({ accounts, packStore, content, cards, sendJson, readBody });
 
 async function handleApi(req: IncomingMessage, res: ServerResponse, parts: string[]): Promise<void> {
@@ -280,6 +289,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
   if (await newsApi(req, res, parts)) return;
   if (await chatApi(req, res, parts)) return;
   if (await reportsApi(req, res, parts)) return;
+  if (await adminPlayersApi(req, res, parts)) return;
   // GET /api/info
   if (req.method === 'GET' && parts[0] === 'info') return sendJson(res, 200, { lanUrls: lanUrls() });
 

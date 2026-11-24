@@ -37,6 +37,16 @@ interface UserRow {
   coins: number;
   email: string | null;
   email_verified: number;
+  banned_until: number;
+  ban_reason: string | null;
+}
+
+/** "Banned forever" is stored as this far-future time. */
+export const BAN_FOREVER = 8_640_000_000_000_000;
+
+export function banMessage(until: number, reason: string | null): string {
+  const when = until >= BAN_FOREVER ? 'permanently' : `until ${new Date(until).toUTCString().replace(/:\d\d GMT$/, ' UTC')}`;
+  return `This account is banned ${when}.${reason ? ` Reason: ${reason}` : ''} Questions: support@playgrounddueling.com`;
 }
 const toUser = (r: UserRow): User => ({ id: r.id, username: r.username, isAdmin: r.is_admin === 1, elo: r.elo, coins: r.coins });
 
@@ -73,10 +83,13 @@ export class Accounts {
   /** Sign-ups per address: 10 an hour. */
   private readonly signupLimiter = new LoginLimiter(10, 60 * 60 * 1000);
   private readonly sendMail: SendMail | null;
+  /** Test servers only (no Resend key + YUGS_TEST_CODES=1): the last code per user, so test scripts can sign up. */
+  readonly testCodes: Map<number, string> | null = null;
 
-  constructor(db: Db, sendMail: SendMail | null = null) {
+  constructor(db: Db, sendMail: SendMail | null = null, testCodes = false) {
     this.db = db;
     this.sendMail = sendMail;
+    if (testCodes) this.testCodes = new Map();
   }
 
   normalizeEmail(email: unknown): string | null {
@@ -118,6 +131,7 @@ export class Accounts {
       )
       .run(userId, purpose, email, hashToken(`${userId}:${purpose}:${code}`), now + CODE_MINUTES * 60_000);
     this.lastMail.set(`${userId}:${purpose}`, now);
+    this.testCodes?.set(userId, code);
     this.mailLimiter.fail(keys);
     const user = this.getById(userId)!;
     const sent = await this.sendMail(
@@ -253,7 +267,7 @@ export class Accounts {
   }
 
   /** Sign-up step 1: makes an unverified account and emails a code. Log in happens after verifySignup. */
-  async register(username: unknown, email: unknown, password: unknown, address: string): Promise<Result<{ username: string; email: string }>> {
+  async register(username: unknown, email: unknown, password: unknown, address: string): Promise<Result<{ username: string; email: string; testCode?: string }>> {
     const e = this.normalizeEmail(email);
     const problem = this.validateUsername(username) ?? (e ? null : 'Enter a real email address; your code is sent there.') ?? this.validatePassword(password);
     if (problem) return { ok: false, error: problem };
@@ -278,7 +292,7 @@ export class Accounts {
       this.db.prepare('DELETE FROM users WHERE id = ?').run(id);
       return sent;
     }
-    return { ok: true, value: { username: username as string, email: e! } };
+    return { ok: true, value: { username: username as string, email: e!, testCode: this.testCodes?.get(id) } };
   }
 
   async login(username: unknown, password: unknown, address: string): Promise<Result<User>> {
@@ -293,6 +307,7 @@ export class Accounts {
       return { ok: false, error: 'Wrong username or password.' };
     }
     this.limiter.clear(keys);
+    if (row.banned_until > Date.now()) return { ok: false, error: banMessage(row.banned_until, row.ban_reason) };
     if (!row.email_verified) {
       // Correct password, but the email was never confirmed: send them to the code screen.
       return { ok: false, error: 'Enter the code we emailed you to finish signing up.', verify: true };
@@ -321,9 +336,9 @@ export class Accounts {
     const row = this.db
       .prepare(
         `SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
-         WHERE s.token_hash = ? AND s.expires_at > ?`,
+         WHERE s.token_hash = ? AND s.expires_at > ? AND u.banned_until <= ?`,
       )
-      .get(hashToken(token), Date.now()) as UserRow | undefined;
+      .get(hashToken(token), Date.now(), Date.now()) as UserRow | undefined;
     return row ? toUser(row) : null;
   }
 
@@ -345,6 +360,17 @@ export class Accounts {
     this.db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await hashPassword(newPassword), row.id);
     this.db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id);
     return { ok: true, value: toUser(row) };
+  }
+
+  /** Admin tool: ban (logs them out everywhere). days = null means forever. */
+  ban(userId: number, days: number | null, reason: string): void {
+    const until = days === null ? BAN_FOREVER : Date.now() + days * 86_400_000;
+    this.db.prepare('UPDATE users SET banned_until = ?, ban_reason = ? WHERE id = ?').run(until, reason || null, userId);
+    this.db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+  }
+
+  unban(userId: number): void {
+    this.db.prepare('UPDATE users SET banned_until = 0, ban_reason = NULL WHERE id = ?').run(userId);
   }
 
   setAdmin(username: string, isAdmin: boolean): boolean {

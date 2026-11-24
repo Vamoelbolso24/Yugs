@@ -120,6 +120,10 @@ const MIGRATIONS: string[] = [
      attempts   INTEGER NOT NULL DEFAULT 0,
      PRIMARY KEY (user_id, purpose)
    );`,
+
+  // 10: bans (banned_until: 0 = not banned, a time = banned until then)
+  `ALTER TABLE users ADD COLUMN banned_until INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE users ADD COLUMN ban_reason TEXT;`,
 ];
 
 export type Db = DatabaseSync;

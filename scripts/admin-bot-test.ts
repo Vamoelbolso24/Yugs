@@ -2,6 +2,7 @@
 // The admin account is made with the admin script first, so pass the same database:
 //   node scripts/admin-bot-test.ts [baseUrl]   (needs YUGS_DB to point at the server's database)
 import { execFileSync } from 'node:child_process';
+import { testSignup } from './test-signup.ts';
 const BASE = process.argv[2] ?? 'http://localhost:3000';
 const failures: string[] = [];
 const check = (ok: boolean, label: string) => { console.log(`${ok ? 'OK  ' : 'FAIL'} ${label}`); if (!ok) failures.push(label); };
@@ -11,7 +12,7 @@ async function call(method: string, path: string, body: unknown, cookie: string)
 }
 async function account(starter: string): Promise<{ cookie: string; name: string }> {
   const name = `t${Math.random().toString(36).slice(2, 9)}`;
-  const r = await call('POST', '/api/auth/register', { username: name, password: 'testpassword' }, '');
+  const r = await testSignup(BASE, name, 'testpassword');
   const cookie = r.setCookie.split(';')[0]!;
   await call('POST', '/api/starters/choose', { starterId: starter }, cookie);
   return { cookie, name };

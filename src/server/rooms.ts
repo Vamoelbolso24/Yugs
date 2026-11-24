@@ -235,6 +235,17 @@ export class RoomManager {
     this.broadcast(room);
   }
 
+  /** A banned player loses every duel they are in right now. */
+  forfeitUser(userId: number, reason: string): void {
+    for (const room of this.rooms.values()) {
+      const seat = this.seatOfUser(room, userId);
+      if (seat === null || !room.session || room.session.winner !== null) continue;
+      room.session.forfeit(room.duelPlayerOfSeat[seat], reason);
+      this.runClock(room);
+      this.broadcast(room);
+    }
+  }
+
   surrender(room: Room, seat: SeatIndex): void {
     room.session?.surrender(room.duelPlayerOfSeat[seat]);
     this.runClock(room);

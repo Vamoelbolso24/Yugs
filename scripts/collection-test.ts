@@ -1,3 +1,4 @@
+import { testSignup } from './test-signup.ts';
 // Tests the new-player journey over HTTP against a running server (npm start):
 // starter deck -> free packs -> collection -> deck editing rules -> online duel with own decks.
 // Usage:  node scripts/collection-test.ts [baseUrl]
@@ -10,7 +11,7 @@ async function call(method: string, path: string, body: unknown, cookie: string)
   return { status: res.status, data: await res.json() as any, setCookie: res.headers.get('set-cookie') ?? '' };
 }
 async function newAccount(): Promise<string> {
-  const r = await call('POST', '/api/auth/register', { username: `p${Math.random().toString(36).slice(2, 9)}`, password: 'testpassword' }, '');
+  const r = await testSignup(BASE, `p${Math.random().toString(36).slice(2, 9)}`, 'testpassword');
   return r.setCookie.split(';')[0]!;
 }
 
