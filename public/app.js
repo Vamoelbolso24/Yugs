@@ -977,6 +977,13 @@ function runFx() {
   playNextFx();
 }
 
+/** The card element shown at a place on the board right now (a zone's card, or that card in the hand). */
+function cardAt(pos) {
+  const node = document.querySelector(`[data-zone="${zoneKey(pos)}"]`);
+  if (!node) return null;
+  return node.classList.contains('card') ? node : node.querySelector('.card');
+}
+
 function ghost(code, rect) {
   const g = cardEl({ code, faceDown: !code, defense: false }, { allowRotate: false, peek: false });
   g.classList.add('fx-ghost');
@@ -999,7 +1006,8 @@ function playNextFx() {
     const e = step.items[0];
     if (e.code) showDetail(e.code);
     const rect = step.from.get(e.id) || rectNow(e.at);
-    const still = document.querySelector(`[data-zone="${zoneKey(e.at)}"] .card`);
+    let still = cardAt(e.at);
+    if (still && still.classList.contains('back')) still = null; // a Set card being flipped: show it face-up over it
     let g = null;
     if (still && e.at.location !== LOC.HAND) still.classList.add('fx-activating'); // still on the field: light it up there
     else if (rect) { g = ghost(e.code, rect); g.classList.add('fx-activating'); }  // already gone (or from the hand): show it where it was
@@ -1018,6 +1026,9 @@ function playNextFx() {
     if (!from || !to) continue;
     const g = ghost(e.code, from);
     if (e.kind === 'destroyed') g.classList.add('fx-destroyed');
+    // The card leaves its old place (a pile keeps showing its count until the board updates).
+    const src = e.from.location === LOC.DECK || e.from.location === LOC.GRAVE || e.from.location === LOC.REMOVED || e.from.location === LOC.EXTRA ? null : cardAt(e.from);
+    if (src) src.style.visibility = 'hidden';
     ghosts.push([g, from, to]);
   }
   if (!ghosts.length) { playNextFx(); return; }
@@ -1027,7 +1038,7 @@ function playNextFx() {
       const dx = to.left + to.width / 2 - (from.left + from.width / 2);
       const dy = to.top + to.height / 2 - (from.top + from.height / 2);
       const scale = Math.min(1.2, Math.max(0.5, to.height / from.height));
-      g.style.transition = `transform ${fast ? 300 : 450}ms ease-in, opacity ${fast ? 300 : 450}ms ease-in`;
+      g.style.transition = `transform ${fast ? 300 : 450}ms ease-in-out, opacity ${fast ? 300 : 450}ms ease-in`;
       g.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
       g.style.opacity = '0.35';
     }
@@ -1340,7 +1351,9 @@ function render() {
     if (mode !== null) $('prompt').replaceChildren(el('div', 'error', requestError || 'Starting duel...'));
     return;
   }
-  queueEvents(); // first (measures where cards were), and so a new question waits for the animations
+  queueEvents(); // first: it measures where cards were
+  // Like EDOPro: while animations play, the board keeps showing how it was; it updates when they finish.
+  if (fx.playing) { runFx(); return; }
   const actions = actionMap();
   renderHeader();
   renderSide(me(), 'side-0', actions);

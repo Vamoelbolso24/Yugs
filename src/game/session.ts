@@ -321,11 +321,20 @@ export class DuelSession {
   /** Cards leaving the field, going to the hand, being banished...: one event each (code only if public). */
   private trackMove(msg: OcgMessage & { type: OcgMessageType.MOVE }): void {
     const from = msg.from, to = msg.to;
-    if (!from.location || from.location === to.location || (msg.reason & REASON_DRAW)) return;
+    if (!from.location || from.location === to.location) return;
+    if (msg.reason & REASON_DRAW) {
+      // Draws fly face-down from the Deck to the hand (the card itself stays secret).
+      this.addEvent({
+        kind: 'draw', player: to.controller, code: 0,
+        from: { controller: from.controller, location: from.location, sequence: 0 },
+        to: { controller: to.controller, location: to.location, sequence: to.sequence },
+      });
+      return;
+    }
     const FIELD = OcgLocation.MZONE | OcgLocation.SZONE;
     const faceUp = (pos: number) => (pos & (OcgPosition.FACEUP_ATTACK | OcgPosition.FACEUP_DEFENSE)) !== 0;
     const fromField = (from.location & FIELD) !== 0;
-    let kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck' | null = null;
+    let kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck' | 'draw' | null = null;
     if (fromField && (msg.reason & REASON_DESTROY)) kind = 'destroyed';
     else if (to.location === OcgLocation.HAND) kind = 'to-hand';
     else if (to.location === OcgLocation.REMOVED) kind = 'banished';

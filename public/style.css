@@ -519,8 +519,9 @@ button.danger { background: #c0392b; color: #fff; }
 .site-logo { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto 10px; border-radius: 10px; }
 
 /* Board animations (EDOPro style): activated cards glow in place, moving cards fly, LP ticks */
-.fx-ghost { position: fixed; z-index: 36; pointer-events: none; margin: 0; }
-.card.fx-activating { position: relative; z-index: 5; animation: fx-activate 1s ease-in-out;
+.card.fx-ghost { position: fixed; z-index: 36; pointer-events: none; margin: 0; }
+.card.fx-activating:not(.fx-ghost) { position: relative; z-index: 5; }
+.card.fx-activating { animation: fx-activate 1s ease-in-out;
   box-shadow: 0 0 0 3px var(--accent), 0 0 26px 6px rgba(var(--accent-rgb), .85); }
 .fx-ghost.fx-destroyed { animation: fx-destroy .35s ease-out; filter: brightness(1.4) sepia(1) hue-rotate(-50deg) saturate(4); }
 .lp { transition: color .2s; }
