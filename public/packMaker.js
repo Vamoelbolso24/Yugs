@@ -103,7 +103,7 @@ function renderPmEditor(box) {
   name.value = pm.name;
   name.addEventListener('input', () => { pm.name = name.value; pm.dirty = true; });
   bar.append(pick, name, button(pm.dirty ? 'Save pack *' : 'Save pack', pmSave));
-  if (pm.packId) bar.append(button('Delete', pmDelete, 'ghost'));
+  if (pm.packId) bar.append(button('Copy', pmCopy, 'secondary'), button('Delete', pmDelete, 'ghost'));
   box.appendChild(bar);
 
   const layout = el('div', 'editor pm-editor');
@@ -333,6 +333,18 @@ async function pmSave() {
   pm.message = saved && !saved.ready
     ? `Saved as a draft: it still needs ${saved.missing.map((r) => RARITY_LABEL[r]).join(', ')} cards before it can go in the shop.`
     : 'Pack saved.';
+  render();
+}
+
+async function pmCopy() {
+  if (pm.dirty) { pm.error = 'Save this pack first (or pick it again to drop the changes), then copy it.'; pm.message = ''; render(); return; }
+  const { ok, data } = await api('POST', `/api/admin/packs/${encodeURIComponent(pm.packId)}/copy`, {});
+  if (!ok) { pm.error = data.error; pm.message = ''; render(); return; }
+  pmTake(data);
+  const copy = data.packs.find((p) => p.id === data.saved);
+  pmOpen(copy);
+  pm.error = '';
+  pm.message = `Copied. You're now editing "${copy.name}": rename it, change what you like, then press Save pack.`;
   render();
 }
 

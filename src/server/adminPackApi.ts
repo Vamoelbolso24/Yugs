@@ -63,6 +63,13 @@ export function createAdminPackApi(deps: { accounts: Accounts; packStore: PackSt
       else sendJson(res, 200, state());
       return true;
     }
+    // POST /api/admin/packs/:id/copy  -> a new pack "<name> (copy)" with the same cards and artwork
+    if (area === 'packs' && m === 'POST' && id && action === 'copy') {
+      const r = packStore.copy(id);
+      if (!r.ok) sendJson(res, 400, { error: r.error });
+      else sendJson(res, 200, { saved: r.pack.id, ...state() });
+      return true;
+    }
     if (area === 'packs' && m === 'POST' && id && action === 'art') {
       const b = await readBody(req, 6_000_000);
       const match = /^data:(image\/[a-z+]+);base64,(.+)$/s.exec(String(b.image ?? ''));

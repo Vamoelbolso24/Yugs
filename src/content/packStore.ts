@@ -128,6 +128,24 @@ export class PackStore {
     return { ok: true, pack };
   }
 
+  /** Makes a copy of a saved pack (cards, description and artwork) named "<name> (copy)". */
+  copy(id: string): { ok: true; pack: Pack } | { ok: false; error: string } {
+    const src = this.content.packs.find((p) => p.id === id);
+    if (!src) return { ok: false, error: 'No such pack.' };
+    const taken = (n: string) => this.content.packs.some((p) => p.name.toLowerCase() === n.toLowerCase());
+    const stem = src.name.replace(/ \(copy( \d+)?\)$/, '').slice(0, 45);
+    let name = `${stem} (copy)`;
+    for (let i = 2; taken(name); i++) name = `${stem} (copy ${i})`;
+    const made = this.save({ name, description: src.description, cards: src.cards });
+    if (!made.ok) return made;
+    if (src.art && existsSync(path.join(PACK_ART_DIR, src.art))) {
+      const data = readFileSync(path.join(PACK_ART_DIR, src.art));
+      const mime = ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' } as Record<string, string>)[src.art.split('.').pop()!.toLowerCase()];
+      if (mime) this.setArt(made.pack.id, data, mime);
+    }
+    return { ok: true, pack: this.content.packs.find((p) => p.id === made.pack.id)! };
+  }
+
   /** Deletes a pack that is not in the shop (now or next week). */
   remove(id: string): { ok: true } | { ok: false; error: string } {
     const s = this.shop();
