@@ -273,7 +273,7 @@ export class DuelSession {
       case OcgMessageType.CHAINING:
         this.chainDepth = msg.chain_size;
         this.responseWindow = true;
-        this.addEvent({ kind: 'activate', player: msg.controller, code: msg.code });
+        this.addEvent({ kind: 'activate', player: msg.controller, code: msg.code, at: { controller: msg.controller, location: msg.location, sequence: msg.sequence } });
         break;
       case OcgMessageType.MOVE:
         this.trackMove(msg);
@@ -335,7 +335,11 @@ export class DuelSession {
     // Everyone may see the card if it was face-up before, or ends up face-up where everyone can look.
     const wasPublic = (fromField && faceUp(from.position)) || from.location === OcgLocation.GRAVE || (from.location === OcgLocation.REMOVED && faceUp(from.position));
     const nowPublic = to.location === OcgLocation.GRAVE || (to.location === OcgLocation.REMOVED && faceUp(to.position));
-    this.addEvent({ kind, player: from.controller, code: wasPublic || nowPublic ? msg.card : 0 });
+    this.addEvent({
+      kind, player: from.controller, code: wasPublic || nowPublic ? msg.card : 0,
+      from: { controller: from.controller, location: from.location, sequence: from.sequence },
+      to: { controller: to.controller, location: to.location, sequence: to.sequence },
+    });
   }
 
   /**

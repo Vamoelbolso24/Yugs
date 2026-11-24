@@ -445,6 +445,7 @@ function placeCard(card, controller, location, sequence, actions) {
 
 function zone(card, controller, location, sequence, actions, label, altKeys = []) {
   const z = el('div', 'zone');
+  z.dataset.zone = `${controller}-${location}-${sequence}`;
   if (card) {
     z.appendChild(placeCard(card, controller, location, sequence, actions));
     return z;
@@ -465,6 +466,7 @@ function zone(card, controller, location, sequence, actions, label, altKeys = []
 
 function pile(cards, controller, location, label, actions, faceDownCount) {
   const z = el('div', 'zone pile');
+  z.dataset.zone = `${controller}-${location}`;
   if (faceDownCount !== undefined) {
     if (faceDownCount > 0) z.appendChild(cardEl({ code: 0, faceDown: true }));
     else z.appendChild(el('div', 'label', label));
@@ -555,7 +557,8 @@ function renderSide(p, elementId, actions) {
     const seatInfo = online.state.seats[1 - online.seat];
     if (seatInfo && !seatInfo.connected) bar.appendChild(el('span', 'offline', 'disconnected'));
   }
-  const lp = el('span', 'lp', `LP ${pl.lp}`);
+  const lp = el('span', 'lp', `LP ${lpShown.duel === view.id && lpShown.lp[p] !== null ? lpShown.lp[p] : pl.lp}`);
+  lp.dataset.player = String(p);
   if (pl.lp <= 2000) lp.classList.add('low');
   bar.appendChild(lp);
   if (mode === 'online' && online && online.state && online.state.clock) {
@@ -589,7 +592,12 @@ function renderSide(p, elementId, actions) {
   spells.appendChild(el('div', 'zone empty-slot'));
 
   const hand = el('div', 'hand');
-  pl.hand.forEach((c, i) => hand.appendChild(placeCard({ ...c, faceDown: false, defense: false }, p, LOC.HAND, i, actions)));
+  hand.dataset.zone = `${p}-${LOC.HAND}`;
+  pl.hand.forEach((c, i) => {
+    const h = placeCard({ ...c, faceDown: false, defense: false }, p, LOC.HAND, i, actions);
+    h.dataset.zone = `${p}-${LOC.HAND}-${i}`;
+    hand.appendChild(h);
+  });
 
   side.append(monsters, spells, hand, bar);
 }
@@ -915,65 +923,141 @@ function renderHeader() {
   t.append(document.createTextNode(`Turn ${view.turn} · `), b, document.createTextNode(`'s turn · ${view.phase}`));
 }
 
-// ------------------------------------------------------------------ animations (activations, cards moving, damage)
+// ------------------------------------------------------------------ animations (like EDOPro: on the board itself)
+// Activated cards light up where they are (and show in the card panel); cards that move fly from their
+// old place to their new one; the LP counters tick up or down.
 
-const FX_LABEL = {
-  'destroyed': 'Destroyed', 'to-grave': 'Sent to the Graveyard', 'to-hand': 'Added to the hand',
-  'banished': 'Banished', 'to-deck': 'Returned to the Deck',
-};
-const FX_TIME = { activate: 1700, destroyed: 1200, damage: 1300, recover: 1100 };
 let fx = { duel: null, lastId: 0, queue: [], playing: false };
+let boardRects = new Map();   // where every zone was on screen just before the board was redrawn
+let lpShown = { duel: null, lp: [null, null] };
 
-/** Queues the board events that are new since the last update (on the first update of a duel, just remembers them). */
+const zoneKey = (pos) => `${pos.controller}-${pos.location}-${pos.sequence}`;
+const pileKey = (pos) => `${pos.controller}-${pos.location}`;
+
+/** Remember where everything is before the board is redrawn (cards that leave must fly from there). */
+function snapshotBoard() {
+  boardRects = new Map();
+  for (const node of document.querySelectorAll('[data-zone]')) {
+    const r = node.getBoundingClientRect();
+    if (r.width) boardRects.set(node.dataset.zone, r);
+  }
+}
+function rectNow(pos) {
+  const node = document.querySelector(`[data-zone="${zoneKey(pos)}"]`) || document.querySelector(`[data-zone="${pileKey(pos)}"]`);
+  return node ? node.getBoundingClientRect() : null;
+}
+const rectBefore = (pos) => boardRects.get(zoneKey(pos)) || boardRects.get(pileKey(pos)) || rectNow(pos);
+
+/** Queues the board events that are new since the last update (on a duel's first update, just remembers them). */
 function queueEvents() {
   const events = (view && view.events) || [];
   if (fx.duel !== view.id) {
     fx = { duel: view.id, lastId: events.length ? events[events.length - 1].id : 0, queue: [], playing: false };
-    $('fx').classList.add('hidden');
     return;
   }
-  const fresh = events.filter((e) => e.id > fx.lastId);
+  const fresh = events.filter((e) => e.id > fx.lastId && e.kind !== 'damage' && e.kind !== 'recover');
+  if (events.length) fx.lastId = Math.max(fx.lastId, events[events.length - 1].id);
   if (!fresh.length) return;
-  fx.lastId = fresh[fresh.length - 1].id;
-  // Cards moving the same way at the same time (Raigeki, Heavy Storm...) play as one step.
+  // Each activation is its own step; cards moving one after another (Raigeki, a resolving chain) fly together.
   for (const e of fresh) {
     const last = fx.queue[fx.queue.length - 1];
-    if (last && e.kind !== 'activate' && last.kind === e.kind && last.player === e.player && 'code' in e && last.items.length < 6 && !last.started) last.items.push(e);
-    else fx.queue.push({ kind: e.kind, player: e.player, items: [e], started: false });
+    if (e.kind !== 'activate' && last && last.kind === 'move' && !last.started) last.items.push(e);
+    else fx.queue.push({ kind: e.kind === 'activate' ? 'activate' : 'move', items: [e], started: false, from: new Map() });
+    // Where the card was, measured now (before the board is redrawn).
+    const step = fx.queue[fx.queue.length - 1];
+    step.from.set(e.id, rectBefore(e.kind === 'activate' ? e.at : e.from));
   }
-  if (!fx.playing) playNextFx();
+  fx.playing = true;
+}
+
+/** Starts the queued animations once the new board is on screen. */
+function runFx() {
+  if (!fx.playing || fx.running) return;
+  fx.running = true;
+  playNextFx();
+}
+
+function ghost(code, rect) {
+  const g = cardEl({ code, faceDown: !code, defense: false }, { allowRotate: false, peek: false });
+  g.classList.add('fx-ghost');
+  Object.assign(g.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+  document.body.appendChild(g);
+  return g;
 }
 
 function playNextFx() {
-  const box = $('fx');
   const step = fx.queue.shift();
   if (!step || !view) {
     fx.playing = false;
-    box.classList.add('hidden');
-    render(); // questions and the result wait until the animations are done
+    fx.running = false;
+    render(); // questions and the result waited for the animations
     return;
   }
-  fx.playing = true;
   step.started = true;
-  const who = view.players[step.player] ? view.players[step.player].name : '';
-  box.className = `fx fx-${step.kind}`;
-  box.replaceChildren();
-  if (step.kind === 'damage' || step.kind === 'recover') {
-    const amount = step.items.reduce((n, e) => n + e.amount, 0);
-    box.append(el('div', 'fx-amount', `${step.kind === 'damage' ? '-' : '+'}${amount} LP`), el('div', 'fx-label', who));
-  } else {
-    const row = el('div', 'fx-cards');
-    for (const e of step.items) row.appendChild(cardEl({ code: e.code, faceDown: !e.code, defense: false }, { allowRotate: false, peek: false }));
-    const first = step.items[0];
-    const name = first.code ? cardInfo(first.code)?.name || 'a card' : 'a Set card';
-    const label = step.kind === 'activate'
-      ? `${who} activates ${name}`
-      : `${FX_LABEL[step.kind] || ''}${step.items.length > 1 ? ` (${step.items.length})` : ''}`;
-    box.append(row, el('div', 'fx-label', label));
+  const fast = fx.queue.length >= 3; // long chains play faster, so nobody's clock suffers
+  if (step.kind === 'activate') {
+    const e = step.items[0];
+    if (e.code) showDetail(e.code);
+    const rect = step.from.get(e.id) || rectNow(e.at);
+    const still = document.querySelector(`[data-zone="${zoneKey(e.at)}"] .card`);
+    let g = null;
+    if (still && e.at.location !== LOC.HAND) still.classList.add('fx-activating'); // still on the field: light it up there
+    else if (rect) { g = ghost(e.code, rect); g.classList.add('fx-activating'); }  // already gone (or from the hand): show it where it was
+    setTimeout(() => {
+      if (still) still.classList.remove('fx-activating');
+      if (g) g.remove();
+      playNextFx();
+    }, fast ? 500 : 1000);
+    return;
   }
-  // Long chains play faster, so the animations never eat much of anyone's clock.
-  const time = FX_TIME[step.kind] || 1000;
-  setTimeout(playNextFx, fx.queue.length >= 3 ? Math.min(time, 650) : time);
+  // Cards moving: each flies from where it was to its new pile / zone / hand.
+  const ghosts = [];
+  for (const e of step.items) {
+    const from = step.from.get(e.id);
+    const to = rectNow(e.to);
+    if (!from || !to) continue;
+    const g = ghost(e.code, from);
+    if (e.kind === 'destroyed') g.classList.add('fx-destroyed');
+    ghosts.push([g, from, to]);
+  }
+  if (!ghosts.length) { playNextFx(); return; }
+  const delay = step.items.some((e) => e.kind === 'destroyed') ? (fast ? 150 : 300) : 0;
+  setTimeout(() => {
+    for (const [g, from, to] of ghosts) {
+      const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+      const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+      const scale = Math.min(1.2, Math.max(0.5, to.height / from.height));
+      g.style.transition = `transform ${fast ? 300 : 450}ms ease-in, opacity ${fast ? 300 : 450}ms ease-in`;
+      g.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+      g.style.opacity = '0.35';
+    }
+    setTimeout(() => { for (const [g] of ghosts) g.remove(); playNextFx(); }, fast ? 320 : 480);
+  }, delay);
+}
+
+/** LP counters tick to their new value; a small red/green number floats up next to them. */
+function animateLp() {
+  if (lpShown.duel !== view.id) { lpShown = { duel: view.id, lp: view.players.map((pl) => pl.lp) }; return; }
+  view.players.forEach((pl, p) => {
+    const before = lpShown.lp[p];
+    const after = pl.lp;
+    lpShown.lp[p] = after;
+    if (before === null || before === after) return;
+    const node = document.querySelector(`.lp[data-player="${p}"]`);
+    if (!node) return;
+    const diff = after - before;
+    const pop = el('span', `lp-pop ${diff < 0 ? 'down' : 'up'}`, `${diff > 0 ? '+' : ''}${diff}`);
+    node.parentNode.insertBefore(pop, node.nextSibling);
+    node.classList.add(diff < 0 ? 'lp-hit' : 'lp-heal');
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / 700);
+      node.textContent = `LP ${Math.round(before + diff * t)}`;
+      if (t < 1 && node.isConnected) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    setTimeout(() => { pop.remove(); node.classList.remove('lp-hit', 'lp-heal'); }, 1400);
+  });
 }
 
 function renderWinner() {
@@ -1242,6 +1326,7 @@ function copyRow(text) {
 }
 
 function render() {
+  snapshotBoard();
   renderLobby();
   $('btn-surrender').classList.toggle('hidden', !view || view.winner !== null);
   $('btn-new').textContent = 'Menu';
@@ -1255,7 +1340,7 @@ function render() {
     if (mode !== null) $('prompt').replaceChildren(el('div', 'error', requestError || 'Starting duel...'));
     return;
   }
-  queueEvents(); // first, so a new question waits for the animations
+  queueEvents(); // first (measures where cards were), and so a new question waits for the animations
   const actions = actionMap();
   renderHeader();
   renderSide(me(), 'side-0', actions);
@@ -1267,6 +1352,8 @@ function render() {
   renderLog();
   renderReveal();
   renderWinner();
+  animateLp();
+  runFx();
 }
 
 // ------------------------------------------------------------------ start

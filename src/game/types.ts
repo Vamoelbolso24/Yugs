@@ -92,9 +92,10 @@ export interface CardText {
  * Something to animate on the board: a card activated, cards that moved, life points that changed.
  * Only public information: code is 0 when the card was hidden from at least one player.
  */
+export interface EventPlace { controller: 0 | 1; location: number; sequence: number }
 export type GameEvent =
-  | { id: number; kind: 'activate'; player: 0 | 1; code: number }
-  | { id: number; kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck'; player: 0 | 1; code: number }
+  | { id: number; kind: 'activate'; player: 0 | 1; code: number; at: EventPlace }
+  | { id: number; kind: 'destroyed' | 'to-grave' | 'to-hand' | 'banished' | 'to-deck'; player: 0 | 1; code: number; from: EventPlace; to: EventPlace }
   | { id: number; kind: 'damage' | 'recover'; player: 0 | 1; amount: number };
 
 export interface GameView {
