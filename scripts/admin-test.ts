@@ -1,6 +1,6 @@
-// Tests duels vs the bot and admin tools over HTTP against a running server.
+// Tests the admin tools (card search, test duels) over HTTP against a running server.
 // The admin account is made with the admin script first, so pass the same database:
-//   node scripts/admin-bot-test.ts [baseUrl]   (needs YUGS_DB to point at the server's database)
+//   node scripts/admin-test.ts [baseUrl]   (needs YUGS_DB to point at the server's database)
 import { execFileSync } from 'node:child_process';
 import { testSignup } from './test-signup.ts';
 const BASE = process.argv[2] ?? 'http://localhost:3000';
@@ -18,39 +18,13 @@ async function account(starter: string): Promise<{ cookie: string; name: string 
   return { cookie, name };
 }
 
-// --- Duel vs bot
-const p = await account('joey');
-const decks = (await call('GET', '/api/decks', undefined, p.cookie)).data.decks;
-check((await call('POST', '/api/duel', { mode: 'bot', botDeckId: decks[0].id }, '')).status === 401, 'bot duels need a login');
-const start = await call('POST', '/api/duel', { mode: 'bot', botDeckId: decks[0].id }, p.cookie);
-check(start.status === 200 && start.data.viewer !== null, 'a duel vs the bot starts');
-let v = start.data;
-const human = v.viewer;
-check(v.players[1 - human].name === 'Bot' && v.players[human].name === p.name, 'you vs "Bot"');
-let hiddenOk = true;
-let steps = 0;
-while (v.winner === null && steps < 3000) {
-  steps++;
-  if (v.players[1 - human].hand.some((c: any) => c.code !== 0)) hiddenOk = false;
-  const d = v.decision;
-  if (!d) throw new Error('no decision and no winner');
-  if (v.turn > 80) { v = (await call('POST', `/api/duel/${v.id}/surrender`, {}, p.cookie)).data; break; }
-  const picks = d.mode === 'menu'
-    ? [d.choices[Math.floor(Math.random() * d.choices.length)].id]
-    : d.choices.map((c: any) => c.id).slice(0, d.min);
-  const r = await call('POST', `/api/duel/${v.id}/answer`, { decisionId: d.id, picks }, p.cookie);
-  v = r.status === 200 ? r.data : r.data.view;
-}
-check(v.winner !== null, `the duel vs the bot finished (turn ${v.turn}, ${v.winner === human ? 'you won' : v.winner === 2 ? 'draw' : 'bot won'})`);
-check(hiddenOk, "the bot's hand was always hidden from you");
 const other = await account('yugi');
-check((await call('GET', `/api/duel/${v.id}`, undefined, other.cookie)).status === 403, "someone else can't open your bot duel");
 
 // --- Admin tools
 const admin = await account('kaiba');
 check((await call('GET', '/api/cards?q=telephone', undefined, admin.cookie)).status === 403, 'card search is admin-only');
 check((await call('POST', '/api/duel', { mode: 'test' }, admin.cookie)).status === 403, 'test duels are admin-only');
-execFileSync(process.execPath, ['--experimental-strip-types', 'scripts/admin.ts', 'make-admin', admin.name], { stdio: 'ignore' });
+execFileSync(process.execPath, ['scripts/admin.ts', 'make-admin', admin.name], { stdio: 'ignore' });
 const search = await call('GET', '/api/cards?q=telephone', undefined, admin.cookie);
 const tr = search.data.cards.find((c: number) => search.data.texts[c].name === 'Telephone Ring');
 check(!!tr && search.data.texts[tr].customId === '1900000000' && tr === 1900000000, 'admin search finds custom cards');
@@ -64,10 +38,12 @@ check(test.status === 200, 'admin test duel starts');
 const hand = test.data.players[0].hand.map((c: any) => c.code);
 check(hand.includes(tr) && hand.includes(bewd) && hand.length === 5, 'chosen cards are in the starting hand (and it is filled to 5)');
 check(test.data.viewer === null, 'test duel shows both sides');
+check((await call('GET', `/api/duel/${test.data.id}`, undefined, other.cookie)).status === 403, "someone else can't open your test duel");
+check((await call('POST', '/api/duel', {}, other.cookie)).status === 404, 'practice duels are gone');
 
 // --- Static files
 for (const f of ['/images.js', '/menus.js']) check((await fetch(BASE + f)).status === 200, `${f} is served`);
 check((await fetch(BASE + '/custom-pics/NOPE.jpg')).status === 404, 'missing custom art = 404');
 
-console.log(failures.length ? `\n${failures.length} FAILED` : '\nAll bot and admin checks passed.');
+console.log(failures.length ? `\n${failures.length} FAILED` : '\nAll admin checks passed.');
 process.exit(failures.length ? 1 : 0);

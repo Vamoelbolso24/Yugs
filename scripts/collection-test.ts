@@ -1,4 +1,6 @@
 import { testSignup } from './test-signup.ts';
+import { ECONOMY } from '../src/config.ts';
+const FREE = ECONOMY.freeStarterPacks;
 // Tests the new-player journey over HTTP against a running server (npm start):
 // starter deck -> free packs -> collection -> deck editing rules -> online duel with own decks.
 // Usage:  node scripts/collection-test.ts [baseUrl]
@@ -27,7 +29,7 @@ check(starters.starters.length === 3, '3 starter decks offered');
 const joey = starters.starters.find((s: any) => s.id === 'joey');
 check((await call('POST', '/api/starters/choose', { starterId: 'nope' }, me)).status === 409, 'unknown starter refused');
 const chose = await call('POST', '/api/starters/choose', { starterId: 'joey' }, me);
-check(chose.status === 200 && chose.data.profile.freePacks === 3, 'choosing Joey gives 3 free packs');
+check(chose.status === 200 && chose.data.profile.freePacks === FREE, `choosing Joey gives ${FREE} free packs`);
 check((await call('POST', '/api/starters/choose', { starterId: 'yugi' }, me)).status === 409, "can't choose a second starter");
 
 let collection = (await call('GET', '/api/collection', undefined, me)).data.cards as { code: number; copies: number }[];
@@ -40,14 +42,14 @@ const packs = (await call('GET', '/api/packs', undefined, me)).data.packs;
 check(packs.length === 3 && packs.every((p: any) => p.size === 9), '3 packs of 9 cards in the shop');
 let pulledTotal = 0;
 let maxedTotal = 0;
-for (let i = 0; i < 3; i++) {
-  const r = await call('POST', `/api/packs/${packs[i].id}/open-free`, {}, me);
-  check(r.status === 200 && r.data.cards.length === 9 && r.data.freePacksLeft === 2 - i, `free pack ${i + 1} gives 9 cards`);
+for (let i = 0; i < FREE; i++) {
+  const r = await call('POST', `/api/packs/${packs[i % packs.length].id}/open-free`, {}, me);
+  check(r.status === 200 && r.data.cards.length === 9 && r.data.freePacksLeft === FREE - 1 - i, `free pack ${i + 1} gives 9 cards`);
   pulledTotal += r.data.cards.length;
   maxedTotal += r.data.cards.filter((c: any) => c.maxed).length;
   console.log('      ' + r.data.cards.map((c: any) => `${r.data.cardTexts[c.code].name}${c.rarity !== 'common' ? ` (${c.rarity})` : ''}${c.isNew ? ' NEW' : ''}${c.maxed ? ' (already 3)' : ''}`).join(', '));
 }
-check((await call('POST', `/api/packs/${packs[0].id}/open-free`, {}, me)).status === 409, 'a 4th free pack is refused');
+check((await call('POST', `/api/packs/${packs[0].id}/open-free`, {}, me)).status === 409, 'one more free pack is refused');
 collection = (await call('GET', '/api/collection', undefined, me)).data.cards;
 check(total() === joey.main.length + joey.extra.length + pulledTotal - maxedTotal, 'every pulled card was added (except copies past 3)');
 check(collection.every((c) => c.copies >= 1 && c.copies <= 3), 'no card above 3 copies');
@@ -81,7 +83,7 @@ check(room.status === 200 && join.status === 200, 'two players with their own de
 await new Promise((r) => setTimeout(r, 500));
 const state = (await fetch(`${BASE}/api/room/${room.data.roomId}/state?token=${room.data.token}`).then((r) => r.json())) as any;
 const mine = state.view.players[state.view.viewer];
-check(mine.deckCount + mine.hand.length >= 40 && mine.extraCount === 4, "the duel uses the player's own deck (Joey: 4 Extra Deck cards)");
+check(mine.deckCount + mine.hand.length >= 40 && mine.extraCount === joey.extra.length, `the duel uses the player's own deck (Joey: ${joey.extra.length} Extra Deck cards)`);
 
 console.log(failures.length ? `\n${failures.length} FAILED` : '\nAll collection and deck checks passed.');
 process.exit(failures.length ? 1 : 0);

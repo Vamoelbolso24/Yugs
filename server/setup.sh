@@ -26,7 +26,9 @@ fi
 step "System updates and tools"
 apt-get update -q
 apt-get upgrade -yq
-apt-get install -yq git curl ca-certificates sqlite3 ufw unattended-upgrades caddy
+apt-get install -yq git curl ca-certificates sqlite3 ufw unattended-upgrades caddy fail2ban
+# fail2ban: blocks addresses that keep guessing the SSH password (Ubuntu turns on the SSH rule by default).
+systemctl enable --now fail2ban >/dev/null 2>&1 || true
 # Security updates install themselves every day.
 dpkg-reconfigure -f noninteractive unattended-upgrades >/dev/null 2>&1 || true
 

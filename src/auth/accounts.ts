@@ -120,7 +120,7 @@ export class Accounts {
     const keys = [`m:${userId}`, `a:${address}`];
     const last = this.lastMail.get(`${userId}:${purpose}`) ?? 0;
     if (now - last < 60_000) return { ok: false, error: `Wait ${Math.ceil((60_000 - (now - last)) / 1000)} seconds before asking for another code.` };
-    if (this.mailLimiter.blocked(keys)) return { ok: false, error: 'Too many emails. Wait an hour and try again.' };
+    if (!this.testCodes && this.mailLimiter.blocked(keys)) return { ok: false, error: 'Too many emails. Wait an hour and try again.' };
     if (!this.sendMail) return { ok: false, error: 'Emails are not set up on this server.' };
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     this.db
@@ -271,7 +271,7 @@ export class Accounts {
     const e = this.normalizeEmail(email);
     const problem = this.validateUsername(username) ?? (e ? null : 'Enter a real email address; your code is sent there.') ?? this.validatePassword(password);
     if (problem) return { ok: false, error: problem };
-    if (this.signupLimiter.blocked([`a:${address}`])) return { ok: false, error: 'Too many sign-ups from here. Wait an hour and try again.' };
+    if (!this.testCodes && this.signupLimiter.blocked([`a:${address}`])) return { ok: false, error: 'Too many sign-ups from here. Wait an hour and try again.' };
     this.dropStaleSignups();
     if (this.rowByName(username)) return { ok: false, error: 'That username is taken.' };
     if (this.rowByEmail(e)) return { ok: false, error: 'That email already has an account. Log in, or use "Forgot password?".' };

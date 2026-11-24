@@ -15,7 +15,8 @@
     "test:online": "node scripts/online-test.ts 3",
     "test:collection": "node scripts/collection-test.ts",
     "find-card": "node scripts/find-card.ts",
-    "test:admin": "node scripts/admin-bot-test.ts",
+    "test:admin": "node scripts/admin-test.ts",
+    "test:load": "node scripts/load-test.ts 20 1000",
     "test:custom": "node scripts/custom-cards-test.ts 40"
   },
   "dependencies": {
