@@ -408,7 +408,11 @@ function renderPmShop(box) {
   }
   next.appendChild(slots);
   const row = el('div', 'button-row');
-  row.append(button('Schedule for next week', () => pmSchedule(pm.next.filter(Boolean))));
+  row.append(button('Schedule for next week', () => {
+    const ids = pm.next.filter(Boolean);
+    if (ids.length && ids.length < shop.size) { pm.error = `Fill all ${shop.size} places, or leave them all empty to keep this week's packs.`; pm.message = ''; render(); return; }
+    pmSchedule(ids);
+  }));
   if (shop.next) {
     row.append(button('Start it now', pmStartNow, 'secondary'));
     row.append(button('Cancel the schedule', () => { pm.next = shop.current.slice(); pmSchedule([]); }, 'ghost'));

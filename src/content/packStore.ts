@@ -76,6 +76,7 @@ export class PackStore {
   scheduleNext(ids: string[]): { ok: true; shop: ShopFile } | { ok: false; error: string } {
     const unique = [...new Set(ids.map(String))];
     if (unique.length > SHOP_SIZE) return { ok: false, error: `The shop has ${SHOP_SIZE} places.` };
+    if (unique.length && unique.length < SHOP_SIZE) return { ok: false, error: `Fill all ${SHOP_SIZE} places, or leave them all empty to keep this week's packs.` };
     for (const id of unique) {
       const p = this.content.packs.find((x) => x.id === id);
       if (!p) return { ok: false, error: `There is no pack "${id}".` };
