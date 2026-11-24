@@ -1,0 +1,82 @@
+{
+  "_help": "A pack. Every card in the pack rolls its rarity separately using 'chances' (percent, must add up to 100), then a random card of that rarity is picked from 'cards'. No card repeats inside one pack. List cards by exact English name. Set 'active' to false to take the pack out of the shop. Restart the server after editing.",
+  "id": "ruler-pack",
+  "name": "Ruler Pack (placeholder)",
+  "description": "Powerful Spells and Traps that change the flow of the duel.",
+  "active": true,
+  "slots": [
+    {
+      "count": 9,
+      "chances": {
+        "common": 75,
+        "rare": 16,
+        "super": 6,
+        "ultra": 2.5,
+        "secret": 0.5
+      }
+    }
+  ],
+  "cards": {
+    "secret": [
+      "Thousand-Eyes Restrict"
+    ],
+    "ultra": [
+      "Change of Heart",
+      "Jinzo",
+      "Relinquished",
+      "Dark Paladin"
+    ],
+    "super": [
+      "Mystical Space Typhoon",
+      "Snatch Steal",
+      "Premature Burial",
+      "Heavy Storm",
+      "Harpie's Feather Duster",
+      "Torrential Tribute",
+      "Call of the Haunted",
+      "Imperial Order",
+      "Breaker the Magical Warrior"
+    ],
+    "rare": [
+      "Toon World",
+      "Nobleman of Crossout",
+      "Graceful Charity",
+      "Delinquent Duo",
+      "Royal Decree",
+      "Ring of Destruction",
+      "Bottomless Trap Hole",
+      "Exiled Force",
+      "Tribe-Infecting Virus",
+      "D.D. Warrior Lady",
+      "Gemini Elf",
+      "Spirit Reaper",
+      "Thousand-Eyes Idol",
+      "Black Illusion Ritual",
+      "Buster Blader",
+      "Mataza the Zapper",
+      "D.D. Assailant"
+    ],
+    "common": [
+      "Black Pendant",
+      "Rush Recklessly",
+      "Mystik Wok",
+      "Swords of Revealing Light",
+      "Pot of Greed",
+      "Upstart Goblin",
+      "Giant Trunade",
+      "Messenger of Peace",
+      "Dark Magic Curtain",
+      "Mystic Swordsman LV2",
+      "Zombyra the Dark",
+      "Vorse Raider",
+      "La Jinn the Mystical Genie of the Lamp",
+      "Mad Dog of Darkness",
+      "Skilled Dark Magician",
+      "Big Shield Gardna",
+      "Marshmallon",
+      "Blade Knight",
+      "Command Knight",
+      "Gravekeeper's Spy"
+    ]
+  }
+}

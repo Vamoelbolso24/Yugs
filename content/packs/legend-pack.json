@@ -1,0 +1,86 @@
+{
+  "_help": "A pack. Every card in the pack rolls its rarity separately using 'chances' (percent, must add up to 100), then a random card of that rarity is picked from 'cards'. No card repeats inside one pack. List cards by exact English name. Set 'active' to false to take the pack out of the shop. Restart the server after editing.",
+  "id": "legend-pack",
+  "name": "Legend Pack (placeholder)",
+  "description": "Classic dragons and spellcasters from the very first era.",
+  "active": true,
+  "slots": [
+    {
+      "count": 9,
+      "chances": {
+        "common": 75,
+        "rare": 16,
+        "super": 6,
+        "ultra": 2.5,
+        "secret": 0.5
+      }
+    }
+  ],
+  "cards": {
+    "secret": [
+      "Tri-Horned Dragon"
+    ],
+    "ultra": [
+      "Blue-Eyes White Dragon",
+      "Red-Eyes Black Dragon",
+      "Dark Magician",
+      "Black Skull Dragon"
+    ],
+    "super": [
+      "Raigeki",
+      "Dark Hole",
+      "Monster Reborn",
+      "Gaia The Fierce Knight",
+      "Flame Swordsman"
+    ],
+    "rare": [
+      "Fissure",
+      "Trap Hole",
+      "Polymerization",
+      "Remove Trap",
+      "Two-Pronged Attack",
+      "De-Spell",
+      "Masaki the Legendary Swordsman",
+      "Dragoness the Wicked Knight",
+      "Sogen",
+      "Charubin the Fire Knight",
+      "Karbonala Warrior"
+    ],
+    "common": [
+      "Ookazi",
+      "Last Will",
+      "Reinforcements",
+      "Celtic Guardian",
+      "Basic Insect",
+      "Mammoth Graveyard",
+      "Silver Fang",
+      "Dark Gray",
+      "Nemuriko",
+      "The 13th Grave",
+      "Flame Manipulator",
+      "Monster Egg",
+      "Firegrass",
+      "Dark King of the Abyss",
+      "Fusionist",
+      "Turtle Tiger",
+      "Petit Dragon",
+      "Petit Angel",
+      "Hinotama Soul",
+      "Meotoko",
+      "Aqua Madoor",
+      "Kagemusha of the Blue Flame",
+      "Two-Mouth Darkruler",
+      "Masked Sorcerer",
+      "Roaring Ocean Snake",
+      "Man Eater",
+      "Dark Titan of Terror",
+      "Ogre of the Black Shadow",
+      "One-Eyed Shield Dragon",
+      "Dragon Zombie",
+      "Clown Zombie",
+      "Spirit of the Harp",
+      "M-Warrior #1",
+      "M-Warrior #2"
+    ]
+  }
+}

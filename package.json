@@ -1,0 +1,29 @@
+{
+  "name": "yugs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "start": "node src/server/server.ts",
+    "check": "node scripts/check-setup.mjs",
+    "duel:test": "node scripts/headless-duel.ts",
+    "duel:batch": "node scripts/batch-duels.ts 50",
+    "duel:session-test": "node scripts/session-test.ts 20",
+    "admin": "node scripts/admin.ts",
+    "test:auth": "node scripts/auth-test.ts",
+    "test:online": "node scripts/online-test.ts 3",
+    "test:collection": "node scripts/collection-test.ts",
+    "find-card": "node scripts/find-card.ts",
+    "test:admin": "node scripts/admin-bot-test.ts",
+    "test:custom": "node scripts/custom-cards-test.ts 40"
+  },
+  "dependencies": {
+    "ocgcore-wasm": "^0.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

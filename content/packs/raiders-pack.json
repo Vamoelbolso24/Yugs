@@ -1,0 +1,78 @@
+{
+  "_help": "A pack. Every card in the pack rolls its rarity separately using 'chances' (percent, must add up to 100), then a random card of that rarity is picked from 'cards'. No card repeats inside one pack. List cards by exact English name. Set 'active' to false to take the pack out of the shop. Restart the server after editing.",
+  "id": "raiders-pack",
+  "name": "Raiders Pack (placeholder)",
+  "description": "Rituals, guardians and the first great traps.",
+  "active": true,
+  "slots": [
+    {
+      "count": 9,
+      "chances": {
+        "common": 75,
+        "rare": 16,
+        "super": 6,
+        "ultra": 2.5,
+        "secret": 0.5
+      }
+    }
+  ],
+  "cards": {
+    "secret": [
+      "Gate Guardian"
+    ],
+    "ultra": [
+      "Black Luster Soldier",
+      "Summoned Skull",
+      "Mirror Force",
+      "Barrel Dragon"
+    ],
+    "super": [
+      "Solemn Judgment",
+      "Magic Jammer",
+      "Seven Tools of the Bandit",
+      "Black Luster Ritual",
+      "Cyber Jar",
+      "Morphing Jar"
+    ],
+    "rare": [
+      "Horn of Heaven",
+      "Witch of the Black Forest",
+      "Sangan",
+      "Man-Eater Bug",
+      "Kazejin",
+      "Suijin",
+      "Sanga of the Thunder",
+      "Magician of Faith",
+      "Penguin Soldier",
+      "Card Destruction",
+      "Soul Release"
+    ],
+    "common": [
+      "Shadow Ghoul",
+      "Labyrinth Wall",
+      "Giant Rat",
+      "Mystic Tomato",
+      "Shining Angel",
+      "Hane-Hane",
+      "Old Vindictive Magician",
+      "Nimble Momonga",
+      "Dark Elf",
+      "Great White",
+      "Giant Soldier of Stone",
+      "Kojikocy",
+      "Ryu-Kishin Powered",
+      "Swordsman of Landstar",
+      "Twin Long Rods #2",
+      "Steel Ogre Grotto #1",
+      "Trap Master",
+      "Waboku",
+      "Dragon Capture Jar",
+      "Castle Walls",
+      "Negate Attack",
+      "Just Desserts",
+      "Shadow Spell",
+      "Book of Secret Arts",
+      "Dian Keto the Cure Master"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_help": "Made by the Pack Maker. \"current\" = packs in the shop now; \"next\" replaces it at \"nextFrom\" (the weekly reset).",
+  "current": [
+    "flame-ruler",
+    "legend-pack",
+    "pack-1"
+  ],
+  "next": [
+    "pack-1",
+    "flame-ruler",
+    "squi"
+  ],
+  "nextFrom": "2026-11-30T00:00:00.000Z"
+}

@@ -1,0 +1,25 @@
+-- Toxic Spikes (Continuous Spell)
+-- If your opponent Normal or Special Summons a monster(s), immediately place 1 Poison Counter on each monster
+-- Summoned. (During the Standby Phase, each player loses 300 LP for each Poison Counter on cards they control.)
+local s,id=GetID()
+function s.initial_effect(c)
+	Pokemon.EnablePoisonRule()
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	c:RegisterEffect(e1)
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e2:SetCode(EVENT_SUMMON_SUCCESS)
+	e2:SetRange(LOCATION_SZONE)
+	e2:SetOperation(function(e,tp,eg)
+		local g=eg:Filter(function(tc) return tc:IsSummonPlayer(1-tp) and tc:IsFaceup() and tc:IsCanAddCounter(COUNTER_POISON,1) end,nil)
+		if #g==0 then return end
+		Duel.Hint(HINT_CARD,0,id)
+		for tc in g:Iter() do tc:AddCounter(COUNTER_POISON,1) end
+	end)
+	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
+	c:RegisterEffect(e3)
+end

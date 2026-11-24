@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yugs - Duel</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Yugs <span class="tag">test build</span></div>
+    <div class="turninfo" id="turninfo"></div>
+    <div class="top-actions">
+      <button id="btn-report" class="ghost">Report a bug</button>
+      <button id="btn-surrender" class="ghost">Surrender</button>
+      <button id="btn-new">New duel</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="detail" id="detail">
+      <div class="detail-empty">Hover over a card to read it.</div>
+    </aside>
+
+    <section class="table">
+      <div class="side side-top" id="side-1"></div>
+      <div class="emz-row" id="emz-row"></div>
+      <div class="side side-bottom" id="side-0"></div>
+    </section>
+
+    <aside class="rightcol">
+      <div class="prompt" id="prompt"></div>
+      <div class="actions" id="actions"></div>
+      <div class="log" id="log"></div>
+    </aside>
+  </main>
+
+  <div class="modal-backdrop hidden" id="modal">
+    <div class="modal">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <div class="popup hidden" id="popup"></div>
+
+  <!-- Cards shown by an effect (excavated, revealed, looked at). Doesn't block the game. -->
+  <div class="reveal hidden" id="reveal"></div>
+
+  <div class="lobby hidden" id="lobby">
+    <div class="lobby-box" id="lobby-box"></div>
+  </div>
+
+  <div class="winner hidden" id="winner">
+    <div class="winner-box">
+      <div class="winner-text" id="winner-text"></div>
+      <button id="btn-again">Play again</button>
+    </div>
+  </div>
+
+  <footer class="footer">Not affiliated with or endorsed by Konami or Shueisha. Duel engine and card scripts by Project Ignis (AGPL-3.0). Contact: <a href="mailto:support@playgrounddueling.com">support@playgrounddueling.com</a></footer>
+  <script src="/images.js"></script>
+  <script src="/cardFilter.js"></script>
+  <script src="/menus.js"></script>
+  <script src="/packMaker.js"></script>
+  <script src="/banlistEditor.js"></script>
+  <script src="/reports.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

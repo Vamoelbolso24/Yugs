@@ -1,0 +1,9 @@
+{
+  "_help": "Names of custom counters, shown on cards in duels. The numbers must match the COUNTER_ lines in scripts/custom_utility.lua.",
+  "0x1f01": "Harden",
+  "0x1f02": "Poison",
+  "0x1f03": "Burn",
+  "0x1f04": "Swords Dance",
+  "0x1f05": "C",
+  "0x1f06": "Curse"
+}

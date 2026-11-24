@@ -1,0 +1,23 @@
+-- Kingler
+local s,id=GetID()
+function s.initial_effect(c)
+	Pokemon.AddEvolutionSummon(c,1900000157)   -- from Krabby
+	-- To defense
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e1:SetCode(EVENT_DAMAGE_STEP_END)
+	e1:SetCondition(s.poscon)
+	e1:SetOperation(s.posop)
+	c:RegisterEffect(e1)
+	
+end
+s.listed_names={1900000157}
+function s.poscon(e,tp,eg,ep,ev,re,r,rp)
+	return e:GetHandler()==Duel.GetAttacker() and e:GetHandler():IsRelateToBattle()
+end
+function s.posop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if c:IsAttackPos() then
+		Duel.ChangePosition(c,POS_FACEUP_DEFENSE)
+	end
+end

@@ -1,0 +1,70 @@
+-- Snorlax
+-- Unaffected by the effects of WATER and FIRE monsters your opponent controls.
+-- Your opponent cannot place Counters on this card.
+-- During the End Phase: You can change this card to face-down Defense Position.
+-- If this card is destroyed: You can banish 2 Beast, Winged Beast and/or Insect monsters from your GY; Special
+-- Summon this card.
+local s,id=GetID()
+function s.initial_effect(c)
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCode(EFFECT_IMMUNE_EFFECT)
+	e1:SetValue(function(e,te)
+		local tc=te:GetHandler()
+		return te:IsActiveType(TYPE_MONSTER) and te:GetOwnerPlayer()~=e:GetHandlerPlayer()
+			and tc:IsControler(1-e:GetHandlerPlayer()) and tc:IsLocation(LOCATION_MZONE)
+			and tc:IsAttribute(ATTRIBUTE_WATER|ATTRIBUTE_FIRE)
+	end)
+	c:RegisterEffect(e1)
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetCode(EFFECT_CANNOT_PLACE_COUNTER)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetTargetRange(0,1)
+	e2:SetTarget(function(e,tc) return tc==e:GetHandler() end)
+	c:RegisterEffect(e2)
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_POSITION)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetCode(EVENT_PHASE+PHASE_END)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCountLimit(1)
+	e3:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk)
+		local c=e:GetHandler()
+		if chk==0 then return c:IsFaceup() and c:IsCanTurnSet() end
+		Duel.SetOperationInfo(0,CATEGORY_POSITION,c,1,0,0)
+	end)
+	e3:SetOperation(function(e)
+		local c=e:GetHandler()
+		if c:IsRelateToEffect(e) and c:IsFaceup() then Duel.ChangePosition(c,POS_FACEDOWN_DEFENSE) end
+	end)
+	c:RegisterEffect(e3)
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,0))
+	e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_DELAY)
+	e4:SetCode(EVENT_DESTROYED)
+	e4:SetCost(function(e,tp,eg,ep,ev,re,r,rp,chk)
+		if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,2,e:GetHandler()) end
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+		local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,2,2,e:GetHandler())
+		Duel.Remove(g,POS_FACEUP,REASON_COST)
+	end)
+	e4:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk)
+		local c=e:GetHandler()
+		if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+			and c:IsLocation(LOCATION_GRAVE|LOCATION_REMOVED|LOCATION_HAND|LOCATION_EXTRA|LOCATION_DECK) end
+		Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+	end)
+	e4:SetOperation(function(e,tp)
+		local c=e:GetHandler()
+		if c:IsRelateToEffect(e) then Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) end
+	end)
+	c:RegisterEffect(e4)
+end
+function s.cfilter(c) return c:IsMonster() and c:IsRace(RACE_BEAST|RACE_WINGEDBEAST|RACE_INSECT) and c:IsAbleToRemoveAsCost() end

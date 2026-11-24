@@ -1,0 +1,2608 @@
+# ============================================================================
+# YUGS CUSTOM CARDS
+# ============================================================================
+# Every card starts with its ID number in square brackets: [1900000000]
+#   - The first custom card is 1900000000, the next 1900000001, and so on.
+#   - Never change a card's ID once players own it (the ID is how the game remembers it).
+#   - Artwork:  content/custom/pics/<ID>.jpg      e.g. pics/1900000000.jpg (or .png / .webp)
+#   - Effect:   content/custom/scripts/c<ID>.lua  e.g. scripts/c1900000000.lua (same naming as EDOPro)
+#
+# Fields (write "Field: value", one per line):
+#   Name:        the card name players see (must be unique)
+#   Card type:   e.g. Normal Monster, Effect Monster, Effect Monster Tuner,
+#                Flip Effect Monster, Ritual Effect Monster, Fusion Monster,
+#                Fusion Effect Monster, Synchro Effect Monster, Xyz Effect Monster,
+#                Link Effect Monster, Pendulum Effect Monster,
+#                Spell, Quick-Play Spell, Continuous Spell, Equip Spell,
+#                Field Spell, Ritual Spell, Trap, Continuous Trap, Counter Trap
+#   Attribute:   EARTH, WATER, FIRE, WIND, LIGHT, DARK, DIVINE   (monsters)
+#   Type:        Warrior, Spellcaster, Dragon, Machine, ...       (monsters)
+#   Level:       1-12   (Xyz monsters use "Rank:", Link monsters use
+#                "Link Rating:" and "Link Arrows: Bottom-Left, Top, ...")
+#   Scale:       Pendulum Scale (Pendulum monsters only)
+#   ATK / DEF:   numbers, or ? for "?"
+#   Text:        the card text. Long texts can continue on the next lines
+#                if those lines start with spaces.
+#   Prompt 1..16: short questions shown in the duel, used by the script as
+#                aux.Stringid(id,0) for Prompt 1, aux.Stringid(id,1) for Prompt 2...
+#
+# Lines starting with # are comments. Restart the server after editing this file.
+# (Editing a script file doesn't need a restart: it applies to the next duel.)
+# ============================================================================
+
+[1900000000]
+Name: Telephone Ring
+Card type: Effect Monster
+Attribute: LIGHT
+Type: Machine
+Level: 4
+ATK: 1500
+DEF: 1200
+Text: When this card is Normal Summoned: You can draw 1 card.
+Prompt 1: Draw 1 card
+
+[1900000001]
+Name: Busy Signal
+Card type: Trap
+Text: When an opponent's monster declares an attack: Negate the attack,
+  then your opponent takes 500 damage.
+
+# ============================================================================
+# POKEMON: first batch
+# "Evolution Summon" is the one-line helper Pokemon.AddEvolutionSummon in
+# scripts/custom_utility.lua.
+# ============================================================================
+
+[1900000002]
+Name: Bulbasaur
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 3
+ATK: 1100
+DEF: 1100
+Text: You can inflict 500 damage to your opponent. You can only use this effect of "Bulbasaur" once per turn.
+Prompt 1: Inflict 500 damage
+
+[1900000003]
+Name: Ivysaur
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 5
+ATK: 2000
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Bulbasaur" from your hand or field, or by banishing 1 "Bulbasaur" from your GY. You can only Special Summon "Ivysaur" once per turn this way.
+  During each of your Standby Phases: Your opponent loses 500 LP.
+  Once per turn: You can target 1 monster your opponent controls; toss a coin and call it. If you call it right, change that target to face-down Defense Position.
+Prompt 1: Opponent loses 500 LP
+Prompt 2: Toss a coin to flip a monster face-down
+
+[1900000004]
+Name: Venusaur
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 8
+ATK: 2800
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Ivysaur" from your hand or field, or by banishing 1 "Ivysaur" from your GY. You can only Special Summon "Venusaur" once per turn this way.
+  During each of your Standby Phases: Your opponent loses 500 LP and you gain 500 LP.
+  Once per turn: You can target 1 monster your opponent controls; change that target to face-down Defense Position.
+Prompt 1: Drain 500 LP
+Prompt 2: Flip a monster face-down
+
+[1900000005]
+Name: Charmander
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Pyro
+Level: 3
+ATK: 1200
+DEF: 1000
+Text: The flame on its tail shows the strength of its life force. If it is weak, the flame also burns weakly.
+
+[1900000006]
+Name: Charmeleon
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Pyro
+Level: 5
+ATK: 2100
+DEF: 1800
+Text: You can Special Summon this card from your hand by Tributing 1 "Charmander" from your hand or field, or by banishing 1 "Charmander" from your GY. You can only Special Summon "Charmeleon" once per turn this way. If Summoned this way: You can draw 1 card, then discard 1 card.
+Prompt 1: Draw 1 card, then discard 1
+
+[1900000007]
+Name: Charizard
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Pyro
+Level: 8
+ATK: 3000
+DEF: 2500
+Text: You can Special Summon this card from your hand by Tributing 1 "Charmeleon" from your hand or field, or by banishing 1 "Charmeleon" from your GY. You can only Special Summon "Charizard" once per turn this way. If Summoned this way: You can target 1 monster your opponent controls; destroy it.
+Prompt 1: Destroy 1 monster
+
+[1900000008]
+Name: Squirtle
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 3
+ATK: 1000
+DEF: 1200
+Text: Shoots water at prey while in the water. Withdraws into its shell when in danger.
+
+[1900000009]
+Name: Wartortle
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 5
+ATK: 1800
+DEF: 2100
+Text: You can Special Summon this card from your hand by Tributing 1 "Squirtle" from your hand or field, or by banishing 1 "Squirtle" from your GY. You can only Special Summon "Wartortle" once per turn this way.
+  At the end of the Battle Phase, if this card attacked: You can change it to Defense Position.
+  If this card destroys a monster by battle: You can toss a coin and call it. If you call it right, draw 1 card.
+Prompt 1: Change to Defense Position
+Prompt 2: Toss a coin to draw 1 card
+
+[1900000010]
+Name: Blastoise
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 8
+ATK: 2500
+DEF: 3000
+Text: You can Special Summon this card from your hand by Tributing 1 "Wartortle" from your hand or field, or by banishing 1 "Wartortle" from your GY. You can only Special Summon "Blastoise" once per turn this way.
+  Once per turn (Quick Effect): You can change this card from Attack Position to Defense Position.
+Prompt 1: Change to Defense Position
+
+[1900000011]
+Name: Oak's Lab
+Card type: Spell
+Text: Special Summon 1 "Bulbasaur", "Charmander" or "Squirtle" from your hand or Deck.
+
+[1900000012]
+Name: Frenzy Plant
+Card type: Spell
+Text: Target 1 "Venusaur" you control; it gains 700 ATK until the end of this turn, also it gains this effect until the End Phase.
+  * If this card destroys a monster by battle: You can target up to 3 Level 5 or lower Plant monsters in your GY and/or banishment; return them to the hand.
+Prompt 1: Return up to 3 Plant monsters to the hand
+
+[1900000013]
+Name: Blast Burn
+Card type: Spell
+Text: Target 1 "Charizard" you control that has not attacked this turn; inflict damage to your opponent equal to its original ATK. That "Charizard" cannot attack this turn.
+
+[1900000014]
+Name: Hydro Cannon
+Card type: Spell
+Text: Target 1 "Blastoise" you control; double its ATK until the end of your opponent's next turn, but it cannot attack directly this turn.
+
+[1900000023]
+Name: Pidgey
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 2
+ATK: 800
+DEF: 600
+Text: Common in grassy areas and forests, it is very docile and will chase off enemies by flapping up sand.
+
+[1900000027]
+Name: Rattata
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 4
+ATK: 1200
+DEF: 300
+Text: Will chew on anything with its fangs. If you see one, it is certain that 40 more live in the area.
+
+[1900000029]
+Name: Spearow
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 4
+ATK: 1000
+DEF: 300
+Text: To protect its territory, it flies around ceaselessly, making high-pitched cries.
+
+[1900000036]
+Name: Red's Pikachu
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Thunder
+Level: 9
+ATK: 3100
+DEF: 2800
+Text: Cannot be Special Summoned. Can attack all monsters your opponent controls, once each. If this card attacks, your opponent cannot activate cards or effects until the end of the Damage Step.
+
+# ============================================================================
+# POKEMON: batch 2
+# ============================================================================
+
+[1900000015]
+Name: Caterpie
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Insect
+Level: 1
+ATK: 100
+DEF: 300
+Text: This card can attack directly.
+  During your Standby Phase: You can Tribute this card; Special Summon 1 "Metapod" from your hand or Deck.
+Prompt 1: Special Summon Metapod
+
+[1900000016]
+Name: Metapod
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Insect
+Level: 3
+ATK: 0
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Caterpie" from your hand or field, or by banishing 1 "Caterpie" from your GY. You can only Special Summon "Metapod" once per turn this way.
+  The first time this card would be destroyed by battle, it is not.
+  During your Standby Phase: You can place a Harden Counter on this card. (Pokémon monsters with a Harden Counter gain 300 DEF for each counter on them.)
+  During your Standby Phase: You can Tribute this card with 3 or more Harden Counters; Special Summon 1 "Butterfree" from your hand, GY or Deck.
+Prompt 1: Place a Harden Counter
+Prompt 2: Special Summon Butterfree
+
+[1900000017]
+Name: Butterfree
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Insect
+Level: 5
+ATK: 1800
+DEF: 1800
+Text: You can Special Summon this card from your hand by Tributing 1 "Metapod" from your hand or field, or by banishing 1 "Metapod" from your GY. You can only Special Summon "Butterfree" once per turn this way.
+  Once per turn: You can roll a six-sided die; this card gains 1 of these effects until the end of this turn, depending on the result.
+  1-2: No effect.
+  3: Once per turn: You can target 1 monster your opponent controls; change it to face-down Defense Position.
+  4: Once per turn: You can target 1 monster your opponent controls; it cannot attack during your opponent's next turn.
+  5: Once per turn: You can target 1 Spell/Trap on the field; return it to the hand.
+  6: Once per turn: You can target 1 monster your opponent controls; return it to the hand.
+  If this card attacks, at the end of the Damage Step: You can return this card to the hand, and if you do, Special Summon 1 Level 5 or lower Insect Pokémon from your hand, except "Butterfree".
+Prompt 1: Roll a six-sided die
+Prompt 2: Flip a monster face-down
+Prompt 3: Stop a monster's next attack
+Prompt 4: Return a Spell/Trap to the hand
+Prompt 5: Return a monster to the hand
+Prompt 6: Return to hand and switch
+
+[1900000018]
+Name: Weedle
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Insect
+Level: 1
+ATK: 300
+DEF: 100
+Text: This card can attack directly.
+  During your Standby Phase: You can Tribute this card; Special Summon 1 "Kakuna" from your hand or Deck.
+Prompt 1: Special Summon Kakuna
+
+[1900000019]
+Name: Kakuna
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Insect
+Level: 3
+ATK: 150
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Weedle" from your hand or field, or by banishing 1 "Weedle" from your GY. You can only Special Summon "Kakuna" once per turn this way.
+  The first time this card would be destroyed by battle, it is not.
+  During your Standby Phase: You can place a Harden Counter on this card. (Pokémon monsters with a Harden Counter gain 300 DEF for each counter on them.)
+  During your Standby Phase: You can Tribute this card with 3 or more Harden Counters; Special Summon 1 "Beedrill" from your hand, GY or Deck.
+Prompt 1: Place a Harden Counter
+Prompt 2: Special Summon Beedrill
+
+[1900000020]
+Name: Beedrill
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Insect
+Level: 5
+ATK: 2100
+DEF: 1500
+Text: You can Special Summon this card from your hand by Tributing 1 "Kakuna" from your hand or field, or by banishing 1 "Kakuna" from your GY. You can only Special Summon "Beedrill" once per turn this way.
+  Can make a second attack during each Battle Phase.
+  At the end of the Battle Phase, if this card destroyed a monster by battle: You can return this card to the hand, and if you do, Special Summon 1 Level 5 or lower Insect Pokémon from your hand, except "Beedrill".
+Prompt 1: Return to hand and switch
+
+[1900000021]
+Name: U-Turn
+Card type: Quick-Play Spell
+Text: During your Battle Phase, after an Insect Pokémon you control has battled: Return it to the hand, and if you do, Special Summon from your hand 1 Insect Pokémon with an equal or lower Level but a different name.
+
+[1900000022]
+Name: Pokemon Trainer - Bug Catcher
+Card type: Spell
+Subtypes: Pokemon Trainer
+Text: Add 1 Level 5 or lower Insect Pokémon from your Deck to your hand.
+
+[1900000024]
+Name: Pidgeotto
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 4
+ATK: 1800
+DEF: 1200
+Text: You can Special Summon this card from your hand by Tributing 1 "Pidgey" from your hand or field, or by banishing 1 "Pidgey" from your GY. You can only Special Summon "Pidgeotto" once per turn this way.
+  If this card is Special Summoned this way: You can target 1 Spell/Trap on the field; return it to the hand.
+  This card is treated as a Normal Monster while on the field or in the GY.
+Prompt 1: Return a Spell/Trap to the hand
+
+[1900000025]
+Name: Pidgeot
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 7
+ATK: 2300
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Pidgeotto" from your hand or field, or by banishing 1 "Pidgeotto" from your GY. You can only Special Summon "Pidgeot" once per turn this way.
+  If this card is Special Summoned this way: You can target 1 card on the field; return it to the hand.
+  This card is treated as a Normal Monster while on the field or in the GY.
+Prompt 1: Return a card to the hand
+
+[1900000026]
+Name: Fly
+Card type: Spell
+Text: Target 1 Winged Beast monster you control that hasn't declared an attack this turn; banish it until the start of the Battle Phase of your next turn. When it returns, it gains 1000 ATK until the end of that turn.
+
+[1900000028]
+Name: Raticate
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 5
+ATK: 2100
+DEF: 1400
+Text: You can Special Summon this card from your hand by Tributing 1 "Rattata" from your hand or field, or by banishing 1 "Rattata" from your GY. You can only Special Summon "Raticate" once per turn this way.
+  If this card attacks, during damage calculation: Roll a six-sided die, and if the result is 6, this card gains 1000 ATK until the end of the Damage Step.
+
+[1900000030]
+Name: Fearow
+Card type: Effect Monster
+Subtypes: Pokemon, Gemini
+Attribute: WIND
+Type: Winged Beast
+Level: 5
+ATK: 2100
+DEF: 1400
+Text: You can Special Summon this card from your hand by Tributing 1 "Spearow" from your hand or field, or by banishing 1 "Spearow" from your GY. You can only Special Summon "Fearow" once per turn this way.
+  This card is treated as a Normal Monster while face-up on the field or in the GY. While this card is a Normal Monster on the field, you can Normal Summon it to have it become an Effect Monster with this effect.
+  * Once per turn: You can look at the top card of your opponent's Deck, then shuffle their Deck. If it was a Normal Spell, this card gains that Spell's effect until the end of this turn (use it once).
+Prompt 1: Look at the top card of the opponent's Deck
+Prompt 2: Use the copied Spell's effect
+
+[1900000031]
+Name: Route 1
+Card type: Field Spell
+Text: All Normal WIND Winged Beast monsters and Normal EARTH Beast monsters gain 300 ATK, and if they attack a Defense Position monster, inflict piercing battle damage.
+  If a Normal WIND Winged Beast or Normal EARTH Beast monster declares an attack, the defending player cannot activate Spell/Trap Cards until the end of the Damage Step.
+
+[1900000032]
+Name: Ekans
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Reptile
+Level: 3
+ATK: 1000
+DEF: 1000
+Text: Once per turn: You can target 1 monster your opponent controls; place 1 Poison Counter on it. (During each Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.) You can only use this effect of "Ekans" up to 3 times per turn.
+Prompt 1: Place a Poison Counter
+
+[1900000033]
+Name: Arbok
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Reptile
+Level: 6
+ATK: 2200
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Ekans" from your hand or field, or by banishing 1 "Ekans" from your GY. You can only Special Summon "Arbok" once per turn this way.
+  If this card is Summoned: Target 1 monster your opponent controls; it loses 700 ATK.
+Prompt 1: Lower a monster's ATK
+
+[1900000034]
+Name: Pikachu
+Card type: Effect Monster
+Subtypes: Pokemon, Pikachu
+Attribute: LIGHT
+Type: Thunder
+Level: 4
+ATK: 1500
+DEF: 1000
+Text: (This card is always treated as mentioning "Thunder Stone".)
+  If this card destroys a WATER monster by battle: It can make a second attack in a row.
+Prompt 1: Attack again
+
+[1900000035]
+Name: Raichu
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Thunder
+Level: 7
+ATK: 2450
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Pikachu" from your hand or field, or by banishing 1 "Pikachu" from your GY. You can only Special Summon "Raichu" once per turn this way.
+  All WATER monsters your opponent controls lose 500 ATK/DEF. This card can attack all WATER monsters your opponent controls, once each. Negate the effects of WATER Flip monsters your opponent controls.
+
+[1900000037]
+Name: Thunder Stone
+Card type: Spell
+Text: Tribute 1 monster that mentions "Thunder Stone"; Special Summon 1 monster from your GY or Deck that mentions the Tributed monster's name. You cannot Normal or Special Summon monsters with the same name as the Summoned monster for the rest of this turn.
+
+[1900000038]
+Name: Volt Tackle
+Card type: Spell
+Text: Tribute 1 "Pikachu" monster that hasn't declared an attack this turn; inflict damage to your opponent equal to its ATK, and if you do, your opponent discards 1 random card, then if they have any cards left in their hand, they discard 1 more card of their choice.
+
+[1900000039]
+Name: Light Ball
+Card type: Equip Spell
+Text: Equip only to a "Pikachu" monster. It gains ATK equal to its original ATK, also if it attacks a Defense Position monster, inflict piercing battle damage. If the equipped monster would be destroyed, banished, or returned to the hand or Deck by a card effect, you can banish this card instead.
+
+[1900000046]
+Name: Moon Stone
+Card type: Spell
+Text: Tribute 1 monster that mentions "Moon Stone" in its text; Special Summon from your Deck or GY 1 monster that mentions the Tributed monster's name in its text. You cannot Normal or Special Summon monsters with the same name as the monster Summoned by this effect for the rest of this turn.
+
+
+
+# ============================================================================
+# POKEMON: batch 3
+# ============================================================================
+[1900000040]
+Name: Sandshrew
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 3
+ATK: 1300
+DEF: 1800
+Text: While "Weather Condition - Sandstorm" is on the field, this card cannot be targeted by your opponent's card effects or for attacks, but does not prevent your opponent from attacking directly.
+
+[1900000041]
+Name: Sandslash
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 7
+ATK: 2200
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Sandshrew" from your hand or field, or by banishing 1 "Sandshrew" from your GY. You can only Special Summon "Sandslash" once per turn this way.
+  Once per turn: You can discard 1 card, then declare a monster type (Pyro, Thunder, Rock, or Machine); destroy all monsters on the field of the declared type. This card cannot declare an attack the turn you activate this effect.
+Prompt 1: Discard a card to destroy monsters
+
+[1900000042]
+Name: Weather Condition - Sandstorm
+Card type: Continuous Spell
+Subtypes: Weather Condition
+Text: Destroy this card during your 5th End Phase after its activation. Rock monsters gain 1500 DEF. During the Standby Phase: Each player that doesn't control a Rock monster loses 500 LP.
+
+[1900000043]
+Name: Nidoran Female
+Card type: Effect Monster
+Subtypes: Pokemon, Nido, Nidoran
+Attribute: DARK
+Type: Fiend
+Level: 4
+ATK: 1300
+DEF: 1600
+Text: If this card is Summoned: You can add 1 "Nidoran" monster from your Deck to your hand. You can only use this effect of "Nidoran Female" once per turn.
+Prompt 1: Add 1 Nidoran monster to your hand
+
+[1900000044]
+Name: Nidorina
+Card type: Effect Monster
+Subtypes: Pokemon, Nido
+Attribute: DARK
+Type: Fiend
+Level: 5
+ATK: 2200
+DEF: 1900
+Text: (This card can be targeted by the effects of "Moon Stone".)
+  You can Special Summon this card from your hand by Tributing 1 "Nidoran Female" from your hand or field, or by banishing 1 "Nidoran Female" from your GY. You can only Special Summon "Nidorina" once per turn this way.
+  "Nido" monsters you control, except "Nidorina", gain 300 ATK/DEF.
+  If this card is Summoned: You can add 1 "Nidorino" from your Deck to your hand. You can only use this effect of "Nidorina" once per turn.
+Prompt 1: Add 1 Nidorino to your hand
+
+[1900000045]
+Name: Nidoqueen
+Card type: Effect Monster
+Subtypes: Pokemon, Nido
+Attribute: EARTH
+Type: Fiend
+Level: 8
+ATK: 2500
+DEF: 3000
+Text: You can Special Summon this card from your hand by Tributing 1 "Nidorina" from your hand or field, or by banishing 1 "Nidorina" from your GY. You can only Special Summon "Nidoqueen" once per turn this way.
+  "Nido" monsters you control, except "Nidoqueen", are unaffected by your opponent's Trap cards' effects.
+  If you Summon a "Nido" monster(s): Draw 1 card. You can only activate this effect of "Nidoqueen" once per turn.
+Prompt 1: Draw 1 card
+
+[1900000047]
+Name: Nidoran Male
+Card type: Effect Monster
+Subtypes: Pokemon, Nido, Nidoran
+Attribute: DARK
+Type: Fiend
+Level: 4
+ATK: 1500
+DEF: 1300
+Text: If you control a "Nidoran Female", you can Normal Summon this card in addition to your Normal Summon/Set.
+  If this card attacks a Defense Position monster, inflict piercing battle damage.
+
+[1900000048]
+Name: Nidorino
+Card type: Effect Monster
+Subtypes: Pokemon, Nido
+Attribute: DARK
+Type: Fiend
+Level: 5
+ATK: 2200
+DEF: 1900
+Text: (This card can be targeted by the effects of "Moon Stone".)
+  You can Special Summon this card from your hand by Tributing 1 "Nidoran Male" from your hand or field, or by banishing 1 "Nidoran Male" from your GY. You can only Special Summon "Nidorino" once per turn this way.
+  "Nido" monsters you control, except "Nidorino", gain 300 ATK/DEF.
+  If this card is Summoned: You can add 1 "Nidorina" from your Deck to your hand. You can only use this effect of "Nidorino" once per turn.
+Prompt 1: Add 1 Nidorina to your hand
+
+[1900000049]
+Name: Nidoking
+Card type: Effect Monster
+Subtypes: Pokemon, Nido
+Attribute: EARTH
+Type: Fiend
+Level: 8
+ATK: 2800
+DEF: 2500
+Text: You can Special Summon this card from your hand by Tributing 1 "Nidorino" from your hand or field, or by banishing 1 "Nidorino" from your GY. You can only Special Summon "Nidoking" once per turn this way.
+  "Nido" monsters you control, except "Nidoking", are unaffected by your opponent's Spell cards' effects.
+
+[1900000050]
+Name: Clefairy
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Fairy
+Level: 4
+ATK: 1300
+DEF: 1400
+Text: (This card can be targeted by the effects of "Moon Stone".)
+  Once per turn: You can excavate the top card of your Deck, and if it is a Normal Spell Card, immediately apply its effects and then shuffle it into the Deck. If it's not a Normal Spell Card, place it on the bottom of your Deck.
+Prompt 1: Excavate top card of your Deck
+
+[1900000051]
+Name: Clefable
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Fairy
+Level: 5
+ATK: 2200
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Clefairy" from your hand or field, or by banishing 1 "Clefairy" from your GY. You can only Special Summon "Clefable" once per turn this way.
+  Your opponent cannot target this card with card effects, also, when this card attacks, during damage calculation your opponent's monster's ATK/DEF become their original ATK/DEF.
+  Once per turn, during your turn: You can excavate the top card of your Deck, and if it is a Normal Spell Card, immediately apply its effects and then shuffle it into the Deck. If it's not a Normal Spell Card, place it on the bottom of your Deck.
+  Once per turn, during your opponent's turn (Quick Effect): You can excavate the top card of your Deck, and if it is a Normal Trap Card and the activation timing is correct, immediately apply its effects and then shuffle it into the Deck. If it's not a Normal Trap Card or the activation timing isn't correct, place it on the bottom of your Deck.
+  You can only activate each effect of "Clefable" once per turn.
+Prompt 1: Excavate top card of your Deck
+Prompt 2: Excavate top card of your Deck
+
+[1900000052]
+Name: Vulpix
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 4
+ATK: 1600
+DEF: 1800
+Text: Once per turn: You can place a Burn Counter on a monster your opponent controls. (A monster with a Burn Counter loses 300 ATK for each Burn Counter on it.)
+Prompt 1: Place a Burn Counter
+
+[1900000053]
+Name: Ninetales
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 7
+ATK: 2550
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Vulpix" from your hand or field, or by banishing 1 "Vulpix" from your GY. You can only Special Summon "Ninetales" once per turn this way.
+  Once per turn: You can place a Burn Counter on a monster your opponent controls. (A monster with a Burn Counter loses 300 ATK for each Burn Counter on it.)
+  During either player's turn, when a card or effect is activated: You can remove 1 Burn Counter from the field; negate the activation, and if you do, destroy that card. You can only activate this effect of "Ninetales" once per turn.
+Prompt 1: Place a Burn Counter
+Prompt 2: Negate card effect
+
+[1900000054]
+Name: Fire Stone
+Card type: Spell
+Text: Tribute 1 FIRE Pokemon monster you control to Special Summon from your Deck 1 monster that mentions the Tributed monster's name in its text. For the rest of the turn, you cannot Summon monsters with the same name as the monster Special Summoned by this effect.
+
+[1900000055]
+Name: Will-O-Wisp
+Card type: Continuous Spell
+Text: During each of your Standby Phases, put 1 Burn Counter on 1 face-up monster your opponent controls.
+
+[1900000056]
+Name: Jigglypuff
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Fairy
+Level: 3
+ATK: 800
+DEF: 1400
+Text: (This card can be Tributed by the effect of "Moon Stone".)
+If this card is Normal Summoned: Change it to Defense Position. 
+Once per turn: You can discard 1 card, then target 1 monster your opponent controls; change it to face-down Defense Position.
+Prompt 1: Flip a monster face-down
+
+[1900000061]
+Name: Oddish
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 3
+ATK: 1200
+DEF: 1800
+Text: You can place 1 Posion Counter on a monster your opponent controls. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.) You can only activate this effect of "Oddish" once per turn.
+Prompt 1: Place Poison Counter
+
+# ============================================================================
+# POKEMON: batch 4
+# ============================================================================
+[1900000057]
+Name: Wigglytuff
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Fairy
+Level: 5
+ATK: 1900
+DEF: 2300
+Text: You can Special Summon this card from your hand by Tributing 1 "Jigglypuff" from your hand or field, or by banishing 1 "Jigglypuff" from your GY. You can only Special Summon "Wigglytuff" once per turn this way.
+  Cannot be destroyed by battle with a monster whose ATK is equal to or lower than this card's DEF.
+  Once per turn: You can target 1 monster your opponent controls; toss a coin and call it, and if you call it right, change that monster to face-down Defense Position.
+  At the start of the Damage Step, if this card attacks a face-down Defense Position monster: Destroy it.
+Prompt 1: Toss a coin to flip a monster face-down
+
+[1900000058]
+Name: Zubat
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Winged Beast
+Level: 3
+ATK: 1100
+DEF: 1000
+Text: If your opponent targets this card for an attack: Toss a coin and call it, and if you call it right, negate the attack, and if you do, inflict damage to your opponent equal to half the ATK of the attacking monster.
+
+[1900000059]
+Name: Golbat
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Winged Beast
+Level: 5
+ATK: 2400
+DEF: 2000
+Text: You can Special Summon this card (from your hand) by discarding 1 card.
+  This card cannot declare an attack the turn it is Summoned.
+
+[1900000060]
+Name: Dark Cave
+Card type: Field Spell
+Text: If a monster is Normal or Special Summoned, or Set, on the turn player's side of the field: Their opponent Special Summons 1 "Zu Token" (Winged Beast/DARK/Level 2/ATK 300/DEF 100) to their side of the field. It cannot be Tributed for a Tribute Summon.
+Prompt 1: Summon a Zu Token
+
+[1900000062]
+Name: Gloom
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 5
+ATK: 1900
+DEF: 2300
+Text: You can Special Summon this card from your hand by Tributing 1 "Oddish" from your hand or field, or by banishing 1 "Oddish" from your GY. You can only Special Summon "Gloom" once per turn this way.
+  During your Standby Phase: Gain 500 LP, or if "Weather Condition - Sunny Day" is on the field, gain 1000 LP instead.
+  During the Main Phase: You can place 1 Poison Counter on a monster your opponent controls. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.) You can only activate this effect of "Gloom" once per turn.
+Prompt 1: Place Poison Counter
+
+[1900000063]
+Name: Vileplume
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 7
+ATK: 2300
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Gloom" from your hand or field, or by banishing 1 "Gloom" from your GY. You can only Special Summon "Vileplume" once per turn this way.
+  If "Weather Condition - Sunny Day" is on the field, this card gains 500 ATK, also it can attack all monsters your opponent controls, once each.
+  During the Standby Phase: Gain 800 LP, or if "Weather Condition - Sunny Day" is on the field, gain 1200 LP instead.
+  (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.)
+
+[1900000064]
+Name: Leaf Stone
+Card type: Spell
+Text: Tribute 1 Plant Pokemon monster you control to Special Summon from your Deck 1 monster that mentions the Tributed monster's name in its text. For the rest of the turn, you cannot Summon monsters with the same name as the monster Special Summoned by this effect.
+
+[1900000065]
+Name: Weather Condition - Sunny Day
+Card type: Continuous Spell
+Subtypes: Weather Condition
+Text: Destroy this card during your 5th End Phase after its activation. FIRE monsters gain 300 ATK, also WATER monsters lose 300 ATK.
+  (A monster with a Burn Counter loses 300 ATK for each Burn Counter on it.)
+
+[1900000066]
+Name: Solar Beam
+Card type: Continuous Spell
+Text: Target 1 Plant monster you control; it cannot attack while this card is on the field, also destroy this card if it leaves the field. During your next Standby Phase after this card's activation, or during your Main Phase if "Weather Condition - Sunny Day" is on the field: Send this card to the GY, and if you do, inflict damage to your opponent equal to the original Level x 400 of the monster targeted by this card.
+Prompt 1: Fire Solar Beam
+
+[1900000067]
+Name: Mirror Coat / Counter
+Card type: Trap
+Text: Activate only during your opponent's Battle Phase, after a monster your opponent controls battles: Declare 1 card type (Monster, Spell, or Trap), then reveal the top card of your opponent's Deck, and if it is the declared type, inflict damage to your opponent equal to twice that monster's ATK. Shuffle the revealed card into the Deck. You can only activate 1 "Mirror Coat / Counter" per turn.
+
+[1900000068]
+Name: Zu Token
+Card type: Normal Token Monster
+Attribute: DARK
+Type: Winged Beast
+Level: 2
+ATK: 300
+DEF: 100
+Text: This card can be Summoned by "Dark Cave".
+
+# ============================================================================
+# POKEMON: batch 5
+# ============================================================================
+[1900000069]
+Name: Paras
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Insect
+Level: 4
+ATK: 1300
+DEF: 1000
+Text: If this card is Normal Summoned: You can target 1 monster your opponent controls; change it to face-down Defense Position.
+Prompt 1: Flip a monster face-down
+
+[1900000070]
+Name: Parasect
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Insect
+Level: 7
+ATK: 2300
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Paras" from your hand or field, or by banishing 1 "Paras" from your GY. You can only Special Summon "Parasect" once per turn this way.
+  If this card is Special Summoned this way: You can shuffle 1 monster your opponent controls into the Deck.
+Prompt 1: Shuffle a monster
+
+[1900000071]
+Name: Venonat
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Insect
+Level: 4
+ATK: 1400
+DEF: 1500
+Text: If this card is Normal or Special Summoned: You can look at the top 4 cards of your opponent's Deck, then return them to the top of the Deck in the same order.
+Prompt 1: Look at cards
+
+[1900000072]
+Name: Venomoth
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Insect
+Level: 6
+ATK: 2300
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Venonat" from your hand or field, or by banishing 1 "Venonat" from your GY. You can only Special Summon "Venomoth" once per turn this way.
+  Once per turn (Quick Effect): You can activate 1 of these effects;
+  * Look at 1 random card in your opponent's hand.
+  * Look at 1 Set card your opponent controls.
+  You can only use this effect of "Venomoth" once per turn.
+Prompt 1: Look at cards
+Prompt 2: Look at a random card in their hand
+Prompt 3: Look at a Set card
+
+[1900000073]
+Name: Team Rocket - Grunts
+Card type: Trap
+Subtypes: Team Rocket
+Text: Pay 800 LP; excavate the top 4 cards of your Deck, then Special Summon any "Rattata", "Sandshrew", "Ekans", "Koffing" and "Zubat" among them, also shuffle the rest into the Deck. Monsters Summoned by this effect cannot be Tributed, also banish them when they leave the field.
+
+[1900000074]
+Name: Team Rocket - Master Ball
+Card type: Trap
+Subtypes: Team Rocket
+Text: Take control of 1 Pokemon monster your opponent controls until the end of your next turn.
+
+[1900000075]
+Name: Team Rocket - Giovanni
+Card type: Spell
+Subtypes: Team Rocket
+Text: If you control a monster owned by your opponent: Draw 1 card, and if you do, you can make your opponent discard 1 random card. You can only activate 1 "Team Rocket - Giovanni" per turn.
+Prompt 1: Make your opponent discard 1 random card?
+
+[1900000076]
+Name: Team Rocket - Executive
+Card type: Spell
+Subtypes: Team Rocket
+Text: Add 1 "Team Rocket" card from your Deck to your hand, except "Team Rocket - Executive".
+  During your Main Phase, except the turn this card was sent to the GY: You can banish this card from your GY, then target 2 of your banished Pokemon monsters; shuffle them into the Deck, then draw 1 card. You can only activate 1 "Team Rocket - Executive" per turn.
+Prompt 1: Shuffle 2 banished Pokemon and draw
+
+[1900000077]
+Name: Team Rocket - Scientist
+Card type: Spell
+Subtypes: Team Rocket
+Text: Banish 2 "Team Rocket" cards from your GY; add 1 Spell from your GY to your hand. You can only activate 1 "Team Rocket - Scientist" per turn.
+
+[1900000078]
+Name: Diglett
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 4
+ATK: 1700
+DEF: 1000
+Text: Cards your opponent controls or in their hand cannot be Tributed.
+
+[1900000079]
+Name: Dugtrio
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 8
+ATK: 2750
+DEF: 1500
+Text: You can Special Summon this card from your hand by Tributing 1 "Diglett" from your hand or field, or by banishing 1 "Diglett" from your GY. You can only Special Summon "Dugtrio" once per turn this way.
+  If this card is Normal or Special Summoned, it gains 800 ATK until the end of the turn, also if it battles a Defense Position monster this turn, inflict piercing battle damage to your opponent.
+  Cards your opponent controls or in their hand cannot be Tributed, also they can't banish cards from their GY while they control a monster.
+
+[1900000082]
+Name: Meowth
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 4
+ATK: 1500
+DEF: 1000
+Text: If this card is Normal Summoned: You can draw 1 card.
+Prompt 1: Draw 1 card
+
+[1900000083]
+Name: Persian
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 6
+ATK: 2300
+DEF: 1700
+Text: You can Special Summon this card from your hand by Tributing 1 "Meowth" from your hand or field, or by banishing 1 "Meowth" from your GY. You can only Special Summon "Persian" once per turn this way.
+If this card is Summoned: You can make your opponent discard 1 random card. 
+If this card inflicts battle damage to your opponent: You can Draw 1 card.
+You can only activate each effect of "Persian" once per turn.
+Prompt 1: Make opponent discard
+Prompt 2: Draw 1 card
+
+[1900000084]
+Name: Mankey
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast-Warrior
+Level: 4
+ATK: 1900
+DEF: 1000
+Text: Extremely quick to anger. It could be docile one moment then thrashing away the next instant.
+
+[1900000086]
+Name: Growlithe
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 4
+ATK: 1800
+DEF: 1400
+Text: Extremely loyal, it will fearlessly bark at any opponent to protect its own trainer from harm.
+
+# ============================================================================
+# POKEMON: batch 6
+# ============================================================================
+[1900000080]
+Name: Dig
+Card type: Spell
+Text: Target 1 Level 4 or lower EARTH monster you control that hasn't declared an attack this turn; banish it until your next Battle Phase. Monsters returned to the field by this effect gain 500 ATK and can attack directly, also if they battle, your opponent cannot activate cards or effects until the end of the Damage Step.
+
+[1900000081]
+Name: Earthquake (Move)
+Card type: Spell
+Text: Target 1 Rock monster you control; destroy all other non-WIND monsters on the field whose DEF is equal to or lower than the targeted monster's ATK.
+
+[1900000085]
+Name: Primeape
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast-Warrior
+Level: 6
+ATK: 2500
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Mankey" from your hand or field, or by banishing 1 "Mankey" from your GY. You can only Special Summon "Primeape" once per turn this way.
+  Negate the effects of monsters destroyed by battle with this card.
+
+[1900000087]
+Name: Arcanine
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 8
+ATK: 2750
+DEF: 2500
+Text: You can Special Summon this card from your hand by Tributing 1 "Growlithe" from your hand or field, or by banishing 1 "Growlithe" from your GY. You can only Special Summon "Arcanine" once per turn this way. If this card is Special Summoned this way, or by the effect of "Fire Stone": You can add 1 Ritual Spell from your Deck to your hand.
+  If this card battles, your opponent cannot activate Spell/Trap cards or effects until the end of the Damage Step.
+Prompt 1: Add 1 Ritual Spell
+
+[1900000088]
+Name: Gym Leader - Brock
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. Rock monsters you control gain 500 DEF, also if they are targeted for an attack while in Defense Position, inflict double battle damage to your opponent. During your opponent's Standby Phase: Target 1 monster they control; change it to Attack Position, also it cannot change its battle position and it must attack a Defense Position Rock Pokemon monster you control, if able.
+
+[1900000089]
+Name: Gym Leader - Misty
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. Aqua, Sea Serpent, and Fish Pokemon monsters you control gain 400 ATK during your Battle Phase. If an Aqua, Sea Serpent, or Fish Pokemon monster you control destroys a monster your opponent controls by battle: You can discard 1 WATER monster; draw 1 card.
+Prompt 1: Discard a WATER monster to draw 1
+
+[1900000090]
+Name: Gym Leader - Lt Surge
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. When this card is activated: You can add 1 Level 5 or higher LIGHT Pokemon monster from your Deck to your hand. If a LIGHT Pokemon monster is Summoned by its own effect, or by the effect of "Thunder Stone": Draw 1 card. You can only activate this effect of "Gym Leader - Lt Surge" twice per turn.
+Prompt 1: Add a Level 5+ LIGHT Pokemon to your hand?
+Prompt 2: Draw 1 card
+
+[1900000091]
+Name: Gym Leader - Erika
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. Whenever you gain LP by the effect of a Plant Pokemon monster, your opponent takes damage equal to half the LP gained. Once per turn, if a Plant Pokemon monster you control is targeted by a card effect: You can discard 1 Plant monster; negate the activation, and if you do, destroy it.
+Prompt 1: Discard a Plant to negate
+
+[1900000092]
+Name: Gym Leader - Sabrina
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. When this card is activated: You can add 1 Level 4 or lower Spellcaster or Fiend Pokemon monster from your Deck to your hand. If a Spellcaster or Fiend Pokemon monster you control would be destroyed by battle or card effect, you can send this card to the GY instead. If you control a Spellcaster or Fiend Pokemon monster: You can declare 1 card name; look at your opponent's hand, and if that card is there, banish it, also your opponent banishes all other card(s) with that name in their hand, Deck or GY. You can only activate this effect of "Gym Leader - Sabrina" once per Duel.
+Prompt 1: Add a Level 4 or lower Spellcaster/Fiend Pokemon to your hand?
+Prompt 2: Declare a card name
+
+[1900000093]
+Name: Gym Leader - Koga
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. The first time each DARK Pokemon monster you control would be destroyed by battle each turn, it is not. Once while this card is face-up on the field, if a DARK Pokemon monster you control is targeted by a Spell/Trap your opponent controls: You can negate the activation, and if you do, destroy it.
+Prompt 1: Negate the Spell/Trap
+
+[1900000094]
+Name: Gym Leader - Blaine
+Card type: Continuous Spell
+Subtypes: Gym Leader
+Text: You can only control 1 "Gym Leader" card. When this card is activated: You can discard 1 Spell/Trap; add 1 FIRE Pokemon monster from your Deck to your hand. If you Normal or Special Summon a FIRE Pokemon monster(s): Inflict 400 damage to your opponent.
+Prompt 1: Discard a Spell/Trap to add a FIRE Pokemon?
+Prompt 2: Inflict 400 damage
+
+[1900000095]
+Name: Gym Leader - Giovanni
+Card type: Continuous Spell
+Subtypes: Gym Leader, Team Rocket
+Text: (This card is always treated as a "Team Rocket" card.)
+  Activate only if you control 2 or more Level 7 or higher EARTH Pokemon monsters. You can only control 1 "Gym Leader" card. Once per turn (Quick Effect): When your opponent would Special Summon a monster: You can banish 2 EARTH Pokemon monsters from your GY; negate the Summon, and if you do, destroy it.
+Prompt 1: Negate the Summon
+
+[1900000098]
+Name: Poliwag
+Card type: Effect Monster
+Subtypes: Pokemon, Poli
+Attribute: WATER
+Type: Aqua
+Level: 3
+ATK: 800
+DEF: 1200
+Text: Cannot be destroyed by battle with WATER monsters. While "Rain Dance" is on the field, this card can make a second attack during each Battle Phase.
+
+[1900000101]
+Name: Water Stone
+Card type: Continuous Spell
+Text: Tribute 1 WATER Pokemon monster you control to Special Summon from your Deck 1 monster that mentions the Tributed monster's name in its text. For the rest of the turn, you cannot Summon monsters with the same name as the monster Special Summoned by this effect.
+
+[1900000105]
+Name: Kadabra
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Spellcaster
+Level: 7
+ATK: 2500
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Abra" from your hand or field, or by banishing 1 "Abra" from your GY. You can only Special Summon "Kadabra" once per turn this way.
+If this card inflicts battle damage to your opponent: Draw 1 card.
+
+# ============================================================================
+# POKEMON: batch 7
+# ============================================================================
+[1900000096]
+Name: Psyduck
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 4
+ATK: 1400
+DEF: 1000
+Text: Negate the effects of all "Weather Condition" cards, also, those cards' names become "No Weather Condition".
+  Once per turn, when your opponent activates a card or effect that would destroy a monster(s) they control: You can negate the activation, and if you do, destroy it.
+Prompt 1: Negate effect
+
+[1900000097]
+Name: Golduck
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 8
+ATK: 2750
+DEF: 2500
+Text: You can Special Summon this card from your hand by Tributing 1 "Psyduck" from your hand or field, or by banishing 1 "Psyduck" from your GY. You can only Special Summon "Golduck" once per turn this way.
+  Negate the effects of all "Weather Condition" cards, also, those cards' names become "No Weather Condition".
+  Once per turn, when your opponent activates a card or effect that would destroy a monster(s) they control: You can negate the activation, and if you do, destroy it.
+Prompt 1: Negate Effects
+
+[1900099001]
+Name: No Weather Condition
+Card type: Continuous Spell
+Hidden: yes
+Text: (The name Psyduck and Golduck give to "Weather Condition" cards. Not a real card.)
+
+[1900000099]
+Name: Poliwhirl
+Card type: Effect Monster
+Subtypes: Pokemon, Poli
+Attribute: WATER
+Type: Aqua
+Level: 5
+ATK: 2100
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Poliwag" from your hand or field, or by banishing 1 "Poliwag" from your GY. You can only Special Summon "Poliwhirl" once per turn this way.
+  Cannot be destroyed by battle or targeted by the effects of WATER monsters.
+  While "Rain Dance" is on the field, this card gains the following effect:
+  Once per turn, if this card destroys a monster by battle: It can make a second attack in a row.
+Prompt 1: Attack again in a row
+
+[1900000100]
+Name: Poliwrath
+Card type: Effect Monster
+Subtypes: Pokemon, Poli
+Attribute: WATER
+Type: Beast-Warrior
+Level: 7
+ATK: 2600
+DEF: 2300
+Text: You can Special Summon this card from your hand by Tributing 1 "Poliwhirl" from your hand or field, or by banishing 1 "Poliwhirl" from your GY. You can only Special Summon "Poliwrath" once per turn this way.
+  Cannot be destroyed by battle or targeted by the effects of WATER monsters.
+  While "Rain Dance" is on the field this card gains these effects:
+  1. Your opponent cannot attack other "Poli" monsters you control, except this one.
+  2. Once per turn, during your turn, if this card is targeted by a card effect, you can tribute another "Poli" monster to negate that card's activation and if you do, destroy it.
+Prompt 1: Tribute a Poli to negate
+
+[1900000102]
+Name: Weather Condition - Rain Dance
+Card type: Continuous Spell
+Subtypes: Weather Condition
+Text: This card's name is also treated as "Umi" while face-up on the field. Destroy this card during your 5th End Phase after its activation. WATER monsters gain 300 ATK, also FIRE monsters lose 300 ATK.
+
+[1900000103]
+Name: Thunder (Move)
+Card type: Spell
+Text: Pay 1000 LP; toss a coin, and if you call it right, destroy all monsters your opponent controls. If "Rain Dance" is on the field, you can apply this card's effect without tossing a coin.
+
+[1900000104]
+Name: Abra
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Spellcaster
+Level: 4
+ATK: 1000
+DEF: 500
+Text: Once per turn (Quick Effect): You can pay 800 LP; banish this card until your next Standby Phase.
+Prompt 1: Banish this card
+
+[1900000106]
+Name: Alakazam
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Spellcaster
+Level: 9
+ATK: 3000
+DEF: 2500
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 "Kadabra" you control.
+  If Summoned this way: You can destroy all face-up Spell/Traps your opponent controls.
+  Cannot be destroyed by your opponent's Spell effects, also your opponent cannot target this card with Spell effects.
+  Control of this card cannot switch.
+  If this card inflicts battle damage to your opponent: Draw 1 card.
+Prompt 1: Destroy face-up Spell/Traps
+
+[1900000107]
+Name: Trading with the worst person ever
+Card type: Trap
+Text: Target 1 Pokemon monster you control and your opponent targets 1 monster they control; apply the following effects, in sequence:
+  1. Take control of your opponent's targeted monster.
+  2. Your opponent takes control of your targeted monster.
+
+[1900000108]
+Name: Machop
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Warrior
+Level: 4
+ATK: 1800
+DEF: 1600
+Text: When this card destroys a monster by battle: Inflict 300 damage to your opponent.
+
+[1900000109]
+Name: Machoke
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Warrior
+Level: 7
+ATK: 2450
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Machop" from your hand or field, or by banishing 1 "Machop" from your GY. You can only Special Summon "Machoke" once per turn this way.
+  When this card destroys a monster by battle: Inflict 500 damage to your opponent.
+
+[1900000110]
+Name: Machamp
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Warrior
+Level: 9
+ATK: 2900
+DEF: 2800
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 "Machoke" you control.
+  If Summoned this way: You can destroy all face-up monsters your opponent controls whose DEF is lower than this card's ATK.
+  Cannot be destroyed or targeted by your opponent's monster effects.
+  Control of this card cannot change.
+  If this card inflicts battle damage to your opponent or destroys a monster by battle: Inflict 800 damage to your opponent.
+Prompt 1: Destroy face-up monsters
+
+[1900000111]
+Name: Substitute
+Card type: Equip Spell
+Text: Pay 1500 LP: Equip this card to a Pokemon monster you control.
+  The equipped monster cannot be targeted by your opponent's card effects, also if it would be destroyed by battle or an opponent's card effect, you can destroy this card instead.
+
+[1900000112]
+Name: Bellsprout
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 4
+ATK: 1800
+DEF: 1000
+Text: During your Standby Phase: You can make this card gain 200 ATK, or if "Sunny Day" is on the field, you can make it gain 400 ATK instead. This card cannot declare an attack the turn you activate this effect.
+Prompt 1: Gain ATK (can't attack this turn)
+
+[1900000113]
+Name: Weepingbell
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 5
+ATK: 2200
+DEF: 1800
+Text: You can Special Summon this card from your hand by Tributing 1 "Bellsprout" from your hand or field, or by banishing 1 "Bellsprout" from your GY. You can only Special Summon "Weepingbell" once per turn this way. If Summoned this way: You can discard 1 card; excavate the top 4 cards of your Deck, and if there are any Plant Pokemon monsters or "Sunny Day" among them, add 1 of them to your hand, also send the rest to the GY.
+  During your Standby Phase: You can make this card gain 200 ATK, or if "Sunny Day" is on the field, you can make it gain 400 ATK instead. This card cannot declare an attack the turn you activate this effect.
+Prompt 1: Discard a card to excavate 4 cards
+Prompt 2: Gain ATK (can't attack this turn)
+
+[1900000114]
+Name: Victreebel
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Plant
+Level: 7
+ATK: 2600
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Weepingbell" from your hand or field, or by banishing 1 "Weepingbell" from your GY. You can only Special Summon "Victreebel" once per turn this way.
+  Once per turn, except the turn this card was Summoned: You can make it gain 400 ATK, also it cannot declare an attack this turn. If "Sunny Day" is on the field, this card gains the following effect: If this card attacks a Defense Position monster, inflict double piercing battle damage.
+Prompt 1: Gain 400 ATK (can't attack this turn)
+
+[1900000115]
+Name: Swords Dance
+Card type: Equip Spell
+Text: Equip only to a Pokemon monster.
+  Once per turn: You can put 1 Swords Dance Counter on this card (max. 4), also the equipped monster cannot declare an attack this turn. The equipped monster gains 700 ATK for each Swords Dance Counter on this card.
+Prompt 1: Place a Swords Dance Counter
+
+[1900000116]
+Name: Max Repel
+Card type: Spell
+Text: Target 1 Pokemon monster you control, then target 1 monster with a lower Level than the first target; return it to the hand, then its owner can Special Summon 1 Level 4 or lower monster from their hand in Defense Position. You can only activate 1 "Max Repel" per turn.
+Prompt 1: Special Summon a Level 4 or lower monster in Defense Position?
+
+[1900000117]
+Name: Repel
+Card type: Continuous Spell
+Text: Destroy this card during your 4th Standby Phase after activation.
+  Once per turn, during your Draw Phase, if you draw a monster for your Normal Draw: You can reveal it in your hand; place it on the bottom of the Deck, and if you do, draw 1 card.
+Prompt 1: Put the drawn monster on the bottom and draw 1
+
+[1900000120]
+Name: Geodude
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 4
+ATK: 1400
+DEF: 2000
+Text: Proud of their sturdy bodies, they bash against each other in a contest to prove whose is harder.
+
+[1900000127]
+Name: Ponyta
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 4
+ATK: 1900
+DEF: 1500
+Text: Ponyta is very weak at birth. It can barely stand up. This Pokemon becomes stronger by stumnbling and falling to keep up with
+its parent.
+
+# ============================================================================
+# POKEMON: batch 8
+# ============================================================================
+[1900000118]
+Name: Tentacool
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Aqua
+Level: 4
+ATK: 1200
+DEF: 1600
+Text: If this card is Normal or Special Summoned: You can Special Summon any amount of "Tentacool" and "Tentacruel" from your hand.
+  Once per turn, if this card is targeted for an attack: You can send the top card of your Deck to the GY; negate that attack.
+  Once per turn: You can target 1 monster your opponent controls; toss a coin, and if you call it right, place 1 Poison Counter on that monster. (During the Standby Phase, each player loses 300 LP for each Poison Counter on cards they control.) You can only use this effect of "Tentacool" up to thrice per turn.
+Prompt 1: Special Summon monsters
+Prompt 2: Send top card to negate attack
+Prompt 3: Place Poison Counter
+
+[1900000119]
+Name: Tentacruel
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Aqua
+Level: 7
+ATK: 2500
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Tentacool" from your hand or field, or by banishing 1 "Tentacool" from your GY. You can only Special Summon "Tentacruel" once per turn this way.
+  Your opponent cannot target Level 4 or lower Aqua monsters you control for attacks.
+  Any effect of increasing your opponent's LP inflicts the same amount of damage instead.
+  You can only use each of these effects of "Tentacruel" once per turn:
+  * During your Main Phase, you can place a Poison Counter on a monster your opponent controls. (During the Standby Phase, each player loses 300 LP for each Poison Counter on cards they control.)
+  * When this card is Summoned, you can add 1 "Toxic Spikes" from your Deck to your Hand.
+Prompt 1: Place Poison Counter
+Prompt 2: Add "Toxic Spikes" to your Hand
+
+[1900000121]
+Name: Graveler
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 6
+ATK: 2000
+DEF: 3000
+Text: You can Special Summon this card from your hand by Tributing 1 "Geodude" from your hand or field, or by banishing 1 "Geodude" from your GY. You can only Special Summon "Graveler" once per turn this way.
+  Cannot be destroyed by battle or targeted by the effects of LIGHT monsters.
+  This card can attack while in face-up Defense Position.
+  You can destroy this card, and if you do by this effect, destroy 1 monster your opponent controls.
+  If this card battles with a WATER monster, at the start of the Damage Step: Destroy this card.
+Prompt 1: Destroy this card to destroy monster
+
+[1900000122]
+Name: Golem
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 8
+ATK: 2500
+DEF: 3500
+Text: You can Special Summon this card from your hand by Tributing 1 "Graveler" from your hand or field, or by banishing 1 "Graveler" from your GY. You can only Special Summon "Golem" once per turn this way.
+  Cannot be destroyed by battle or targeted by the effects of LIGHT monsters.
+  This card can attack while in face-up Defense Position.
+  You can destroy this card, and if you do by this effect, destroy all other monsters on the field.
+  If this card battles with a WATER monster, at the start of the Damage Step: Destroy this card.
+Prompt 1: Destroy this card to destroy monster(s)
+
+[1900000123]
+Name: Spikes
+Card type: Continuous Spell
+Text: When this card is activated: You can add 1 "Spikes" from your Deck to your hand. You cannot conduct your Battle Phase the turn you activate this card. If your opponent Normal or Special Summons a monster(s), immediately inflict 300 damage to your opponent for each monster Summoned. You can only activate 1 "Spikes" per turn.
+Prompt 1: Add 1 "Spikes" from your Deck to your hand?
+
+[1900000124]
+Name: Toxic Spikes
+Card type: Continuous Spell
+Text: If your opponent Normal or Special Summons a monster(s), immediately place 1 Poison Counter on each monster Summoned. (During the Standby Phase, each player loses 300 LP for each Poison Counter on cards they control.)
+
+[1900000125]
+Name: Stealth Rocks
+Card type: Continuous Spell
+Text: You can only control 1 "Stealth Rocks". If your opponent Normal or Special Summons a monster(s): Deal 300 damage to your opponent, or if they Summoned a FIRE or WIND monster, deal 600 damage instead.
+Prompt 1: Deal damage
+
+[1900000126]
+Name: Hoenn Route 124
+Card type: Field Spell
+Text: During your opponent's Standby Phase: You can Special Summon up to 2 "Tentacool" from your hand or GY. During your End Phase: You can return 1 of your banished "Tentacool" or "Tentacruel" to the GY.
+Prompt 1: Special Summon up to 2 Tentacool
+Prompt 2: Return a banished Tentacool/Tentacruel to the GY
+
+[1900000128]
+Name: Rapidash
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 6
+ATK: 2200
+DEF: 1900
+Text: You can Special Summon this card from your hand by Tributing 1 "Ponyta" from your hand or field, or by banishing 1 "Ponyta" from your GY. You can only Special Summon "Rapidash" once per turn this way. If Summoned this way: You can add 1 Level 4 or lower FIRE monster from your GY to your hand.
+  This card is treated as a Normal Monster while face-up on the field or in the GY.
+Prompt 1: Add a Level 4 or lower FIRE monster from your GY
+
+[1900000129]
+Name: Slowpoke
+Card type: Effect Monster
+Subtypes: Pokemon, Slow
+Attribute: WATER
+Type: Spellcaster
+Level: 4
+ATK: 1500
+DEF: 1800
+Text: Once per turn, during your Standby Phase: You can place 1 C-Counter on this card (Max. 4). (Monsters with a C-Counter gain 300 ATK/DEF for each C-Counter on them.) This card cannot declare an attack the turn you activate this effect.
+Prompt 1: Place C-Counter
+
+[1900000130]
+Name: Slowbro
+Card type: Effect Monster
+Subtypes: Pokemon, Slow
+Attribute: WATER
+Type: Spellcaster
+Level: 8
+ATK: 2500
+DEF: 2900
+Text: You can Special Summon this card from your hand by Tributing 1 "Slowpoke" from your hand or field, or by banishing 1 "Slowpoke" from your GY. You can only Special Summon "Slowbro" once per turn this way.
+  Once per turn, during your Standby Phase: You can place 1 C-Counter on this card (Max. 4). (Monsters with a C-Counter gain 300 ATK/DEF for each C-Counter on them.) This card cannot declare an attack the turn you activate this effect.
+  Once per turn: You can target 1 monster your opponent controls; during your next Standby Phase, return it to the hand (Even if this card leaves the field).
+Prompt 1: Place C-Counter
+Prompt 2: Return a monster at your next Standby Phase
+Prompt 3: Returns to the hand at Slowbro's next Standby Phase
+
+[1900000131]
+Name: Slowpoke Well
+Card type: Spell
+Text: Add 1 "Slow" Pokemon monster from your Deck to your hand.
+
+[1900000132]
+Name: Slowpoke Tail
+Card type: Spell
+Text: Discard a "Slow" Pokemon monster: Draw 2 cards.
+
+[1900000133]
+Name: Calm Mind
+Card type: Equip Spell
+Text: Equip only to a Spellcaster or Fiend Pokemon monster. Once per turn, during your Standby Phase: Place 1 C-Counter on this card. The equipped monster gains 500 ATK for each C-Counter on this card. If the equipped monster would be destroyed by battle or card effect, you can send this card with 1 or more C-Counters to the GY instead.
+
+[1900000134]
+Name: Haze
+Card type: Spell
+Text: Discard 1 card; destroy all Equip Spells on the field, also remove all Counters on the field, except Poison Counters and Burn Counters. You cannot conduct your Battle Phase the turn you activate this card.
+
+[1900000135]
+Name: Rapid Spin
+Card type: Spell
+Text: Discard 1 card, then target 1 Pokemon monster you control that hasn't declared an attack this turn; destroy all Continuous Spells your opponent controls, the targeted monster cannot declare an attack this turn.
+
+[1900000138]
+Name: Farfetch'd
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 4
+ATK: 1900
+DEF: 1600
+Text: It is always seen with a stick from a plant. Apparently, there are good sticks and bad sticks. This POKéMON occasionally fights with others over choice sticks.
+
+# ============================================================================
+# POKEMON: batch 9
+# ============================================================================
+[1900000136]
+Name: Magnemite
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Machine
+Level: 4
+ATK: 1600
+DEF: 1500
+Text: Your opponent cannot Special Summon Machine monsters. The first time this card would be destroyed by battle each turn, it is not.
+
+[1900000137]
+Name: Magneton
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Machine
+Level: 7
+ATK: 2550
+DEF: 2400
+Text: You can Special Summon this card from your hand by Tributing 1 "Magnemite" from your hand or field, or by banishing 1 "Magnemite" from your GY. You can only Special Summon "Magneton" once per turn this way.
+  Your opponent cannot Special Summon Machine monsters.
+  Negate the effects of face-up Machine monsters your opponent controls.
+  The first time this card would be destroyed by battle each turn, it is not.
+
+[1900000139]
+Name: Stick
+Card type: Equip Spell
+Text: Equip only to "Farfetch'd". The equipped monster gains 800 ATK, also it can make a second attack during each Battle Phase.
+
+[1900000140]
+Name: Doduo
+Card type: Effect Monster, Gemini
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 4
+ATK: 1800
+DEF: 1200
+Text: This card is treated as a Normal Monster while face-up on the field or in the GY. While this card is a Normal Monster on the field, you can Normal Summon it to have it become an Effect Monster with this effect:
+  * Can make a second attack during each Battle Phase.
+
+[1900000141]
+Name: Dodrio
+Card type: Effect Monster, Gemini
+Subtypes: Pokemon
+Attribute: WIND
+Type: Winged Beast
+Level: 8
+ATK: 2500
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Doduo" from your hand or field, or by banishing 1 "Doduo" from your GY. You can only Special Summon "Dodrio" once per turn this way.
+  This card is treated as a Normal Monster while face-up on the field or in the GY. While this card is a Normal Monster on the field, you can Normal Summon it to have it become an Effect Monster with this effect:
+  * Can make up to three attacks on monsters during each Battle Phase.
+
+[1900000142]
+Name: Seel
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 4
+ATK: 1800
+DEF: 2000
+Text: While "Rain Dance" is on the field, this card cannot be targeted by your opponent's card effects.
+
+[1900000143]
+Name: Dewgong
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 7
+ATK: 2550
+DEF: 2750
+Text: You can Special Summon this card from your hand by Tributing 1 "Seel" from your hand or field, or by banishing 1 "Seel" from your GY. You can only Special Summon "Dewgong" once per turn this way.
+  While "Rain Dance" is on the field, this card cannot be targeted by your opponent's card effects.
+  Once per turn, during your Standby Phase (Quick Effect): You can target 1 monster your opponent controls; it cannot activate its effects until the end of your opponent's next turn.
+Prompt 1: Target opponent's monster
+Prompt 2: Can't activate its effects (Dewgong)
+
+[1900000144]
+Name: Tri-Attack
+Card type: Spell
+Text: You can only activate this card if you control "Dodrio" or "Magneton".
+  Reveal 3 Pokemon monsters from your Deck, each with a different Attribute, your opponent randomly banishes 1 of them, and you add the other 2 to your hand, then if your opponent banished a WATER, LIGHT or FIRE monster, apply the corresponding effect.
+  * WATER: Your opponent cannot activate or Set Spell/Trap cards until your next Standby Phase.
+  * LIGHT: Monsters your opponent controls cannot declare an attack next turn.
+  * FIRE: Inflict damage to your opponent equal to the ATK of the banished monster.
+
+[1900000145]
+Name: Grimer
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Aqua
+Level: 4
+ATK: 1400
+DEF: 1800
+Text: Once per turn, if you draw a monster for your normal draw in your Draw Phase: You can reveal it; place it on the bottom of the Deck, then draw 1 card.
+  Once per turn: You can target 1 monster your opponent controls; toss a coin, and if you call it right, place 1 Poison Counter on it. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.)
+  If this card is targeted for an attack: Toss a coin, and if you call it right, negate the attack.
+Prompt 1: Return card to draw 1 card
+Prompt 2: Place Poison Counter
+
+[1900000146]
+Name: Muk
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Aqua
+Level: 7
+ATK: 2200
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Grimer" from your hand or field, or by banishing 1 "Grimer" from your GY. You can only Special Summon "Muk" once per turn this way.
+  Your opponent cannot target Equip Spells you control with card effects, also they cannot be destroyed by your opponent's card effects.
+  Once per turn: You can place 1 Poison Counter on up to 2 monsters on the field. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.)
+  Once per turn, when a monster your opponent controls declares an attack: You can send the top card of your Deck to the GY; negate the attack.
+Prompt 1: Place Poison counter on 2 monsters
+Prompt 2: Negate attack
+
+[1900000147]
+Name: Shellder
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 4
+ATK: 1000
+DEF: 2000
+Text: The first time this card would be destroyed by battle each turn, you can send the top card of your Deck to the GY, and if that card was a WATER Pokemon monster, immediately draw 1 card.
+Prompt 1: Mill top card to prevent destruction
+
+[1900000148]
+Name: Cloyster
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 7
+ATK: 2400
+DEF: 3000
+Text: You can Special Summon this card from your hand by Tributing 1 "Shellder" from your hand or field, or by banishing 1 "Shellder" from your GY. You can only Special Summon "Cloyster" once per turn this way.
+  During your Draw Phase, if you draw a WATER Pokemon monster for your normal draw: You can reveal it; draw 1 card.
+  You can only use each of the following effects of "Cloyster" once per turn:
+  * If this card would be destroyed by battle, you can send the top card of your Deck to the GY instead, and if that card was a WATER Pokemon monster, inflict 500 damage to your opponent.
+  * When your opponent activates a Spell/Trap card or effect that targets this card you control (Quick Effect): You can send the top card of your Deck to the GY; negate the activation, and if you do, destroy it.
+Prompt 1: Reveal card to draw another
+Prompt 2: Mill top card to prevent destruction
+Prompt 3: Mill top card to negate
+
+[1900000149]
+Name: Gastly
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Zombie
+Level: 4
+ATK: 800
+DEF: 500
+Text: Cannot be targeted for an attack by Warrior or non-Effect monsters.
+  Once per turn, if you have 2000 or more LP: You can activate 1 of these effects;
+  * Pay half your LP, then target 1 face-up Spell/Trap your opponent controls; its effect becomes "During your Standby Phase: Lose 1000 LP" (even if this card leaves the field.)
+  * Pay 1500 LP, then target 1 monster your opponent controls; place 1 Curse Counter on it.
+  If a monster has 2 or more Curse Counters immediately send it to the GY, also any monster sent to the GY this way cannot activate its effects in the GY and your opponent cannot target it with card effects (even if this card leaves the field.)
+Prompt 1: Change a Spell/Trap's effect (pay half your LP)
+Prompt 2: Place a Curse Counter (pay 1500 LP)
+Prompt 3: Effect is now "Your Standby Phase: lose 1000 LP"
+
+[1900000150]
+Name: Haunter
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Zombie
+Level: 7
+ATK: 2500
+DEF: 1500
+Text: You can Special Summon this card from your hand by Tributing 1 "Gastly" from your hand or field, or by banishing 1 "Gastly" from your GY. You can only Special Summon "Haunter" once per turn this way.
+  If this card inflicts battle damage to your opponent: Your opponent discards 1 random card. You can only use this effect of "Haunter" once per turn.
+
+[1900000151]
+Name: Gengar
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Zombie
+Level: 9
+ATK: 3000
+DEF: 2500
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned by Tributing 1 "Haunter" you control. If Summoned this way: You can destroy all Set Spells/Traps your opponent controls.
+Cannot be destroyed by your opponent's Trap cards' effects.
+Control of this card cannot change. 
+If this card inflicts battle damage to your opponent: Your opponent discards 1 random card.
+Prompt 1: Destroy Set Spells/Traps
+
+[1900000152]
+Name: Destiny Bond
+Card type: Trap
+Text: If a Zombie Pokemon monster you control is destroyed by an opponent's card and sent to the GY: Send 1 monster your opponent controls to the GY.
+
+[1900000153]
+Name: Curse
+Card type: Spell
+Text: Target 1 Pokemon monster you control; apply the corresponding effect:
+  * If it's a Zombie monster: Pay 3000 LP, then choose 1 face-up Spell/Trap your opponent controls, its effect becomes "During your Standby Phase: Lose 1500 LP."
+  * If it's any other Type: It gains 500 ATK/DEF.
+Prompt 1: Effect is now "Your Standby Phase: lose 1500 LP"
+
+[1900000154]
+Name: Onix
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 4
+ATK: 800
+DEF: 2400
+Text: If this card is attacked by a WATER or Plant monster, at the start of the Damage Step: Destroy this card.
+
+[1900000155]
+Name: Drowzee
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Fiend
+Level: 4
+ATK: 1600
+DEF: 1900
+Text: During your opponent's Standby Phase: Inflict 300 damage to your opponent for each Set card they control.
+  Once per turn: You can target 1 monster your opponent controls; toss a coin, and if you call it right, change it to face-down Defense Position. Monsters changed to face-down Defense Position by this effect cannot change their battle positions.
+Prompt 1: Toss a coin to put a monster to sleep
+
+[1900000156]
+Name: Hypno
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Fiend
+Level: 7
+ATK: 2500
+DEF: 1500
+Text: You can Special Summon this card from your hand by Tributing 1 "Drowzee" from your hand or field, or by banishing 1 "Drowzee" from your GY. You can only Special Summon "Hypno" once per turn this way.
+  During your opponent's End Phase: Inflict 300 damage to your opponent for each Set card they control.
+  Once per turn: You can discard 1 card, then target 1 monster your opponent controls; change it to face-down Defense Position. Monsters changed to face-down Defense Position by this effect cannot change their battle positions.
+Prompt 1: Discard to put a monster to sleep
+
+[1900000157]
+Name: Krabby
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 3
+ATK: 1800
+DEF: 1500
+Text: KRABBY live on beaches, burrowed inside holes dug into the sand. On sandy beaches with little in the way of food, these POKéMON can be seen squabbling with each other over territory.
+
+[1900000158]
+Name: Kingler
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 6
+ATK: 2700
+DEF: 1800
+Text: You can Special Summon this card from your hand by Tributing 1 "Krabby" from your hand or field, or by banishing 1 "Krabby" from your GY. You can only Special Summon "Kingler" once per turn this way.
+If this card attacks, it is changed to Defense Position at the end of the Damage Step.
+
+# ============================================================================
+# POKEMON: batch 10
+# ============================================================================
+[1900000159]
+Name: Voltorb
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Thunder
+Level: 4
+ATK: 1800
+DEF: 1000
+Text: (Quick Effect): You can destroy this card; destroy 1 monster your opponent controls with 2000 or less DEF.
+Prompt 1: Destroy this card to destroy monster
+
+[1900000160]
+Name: Electrode
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Thunder
+Level: 7
+ATK: 2700
+DEF: 1200
+Text: You can Special Summon this card from your hand by Tributing 1 "Voltorb" from your hand or field, or by banishing 1 "Voltorb" from your GY. You can only Special Summon "Electrode" once per turn this way.
+  Once per turn (Quick Effect): You can target a monster your opponent controls, that monster cannot activate its effects until the end of this turn, your opponent cannot activate card effects in response to this effect's activation. You can only activate this effect of "Electrode" once per turn.
+  (Quick Effect): You can destroy this card; destroy 1 monster your opponent controls whose DEF is 2500 or lower, and inflict 1000 damage to your opponent.
+Prompt 1: Lock a monster's effects
+Prompt 2: Destroy this card (Self-Destruct)
+
+[1900000161]
+Name: Crabhammer
+Card type: Equip Spell
+Text: Equip only to "Krabby" or "Kingler" you control. If the equipped monster battles a Defense Position monster, inflict piercing battle damage to your opponent.
+  During your End Phase: You can change the battle position of the equipped monster.
+Prompt 1: Change the equipped monster's position
+
+[1900000162]
+Name: Power Plant
+Card type: Field Spell
+Text: If a Machine or Thunder Pokemon monster is destroyed by battle and sent to the GY: Its controller can excavate the top 3 cards of their Deck, and if there is a Machine or Thunder Pokemon monster(s) among them, they can add 1 of them to their hand, also shuffle the rest into the Deck.
+  If a player adds a card to their hand this way, they can't use this effect again this turn.
+Prompt 1: Use Power Plant (excavate 3)?
+Prompt 2: Add a Machine/Thunder Pokemon to your hand?
+
+[1900000163]
+Name: Exeggcute
+Card type: Effect Monster
+Subtypes: Pokemon, Exegg
+Attribute: LIGHT
+Type: Plant
+Level: 3
+ATK: 800
+DEF: 1500
+Text: If "Sunny Day" is on the field, you can Special Summon this card (from your hand) in Defense Position. You can only Special Summon "Exeggcute" once per turn this way.
+  If this card is Summoned while "Sunny Day" is on the field: You can target 1 Spell/Trap in your GY that states "Pokemon" in its text; add it to your hand.
+Prompt 1: Add Spell/Trap from GY to hand
+
+[1900000164]
+Name: Exeggutor
+Card type: Effect Monster
+Subtypes: Pokemon, Exegg
+Attribute: LIGHT
+Type: Plant
+Level: 7
+ATK: 2600
+DEF: 1800
+Text: You can Special Summon this card from your hand by Tributing 1 "Exeggcute" from your hand or field, or by banishing 1 "Exeggcute" from your GY. You can only Special Summon "Exeggutor" once per turn this way.
+  (This card is also treated as a Spellcaster monster.)
+  While "Sunny Day" is on the field, this card gains the following effects:
+  * During your opponent's turn, if they activate a Spell card (Quick Effect): You can discard 1 card; negate the activation, and if you do, destroy it.
+  * (Quick Effect): You can destroy this card, and if you do, destroy 1 card on the field.
+  You can only use each effect of "Exeggutor" once per turn.
+Prompt 1: Discard a card to negate
+Prompt 2: Destroy this card to destroy 1 card on the field
+
+[1900000165]
+Name: Cubone
+Card type: Effect Monster
+Subtypes: Pokemon, Flip
+Attribute: EARTH
+Type: Rock
+Level: 4
+ATK: 800
+DEF: 2000
+Text: FLIP: Add one "Marowak" monster from your Deck to your hand.
+
+[1900000166]
+Name: Marowak
+Card type: Effect Monster
+Subtypes: Pokemon, Marowak
+Attribute: EARTH
+Type: Rock
+Level: 8
+ATK: 2500
+DEF: 2800
+Text: You can Special Summon this card from your hand by Tributing 1 "Cubone" from your hand or field, or by banishing 1 "Cubone" from your GY. You can only Special Summon "Marowak" once per turn this way.
+  (This card is also treated as a Spellcaster monster.)
+  Unaffected by LIGHT monsters' effects, also LIGHT monsters can't target this card for attacks.
+  Cannot be destroyed by battle with a monster whose ATK is lower than this card's DEF.
+
+[1900000167]
+Name: Barrage
+Card type: Equip Spell
+Text: Equip only to an "Exegg" monster you control. The equipped monster can attack all monsters your opponent controls, once each.
+  At the end of the Battle Phase, if the equipped monster destroyed a monster by battle this turn: You can excavate the top 4 cards of your Deck, and if there are any Spells that state Pokemon in their text, add 1 of them to your hand, also shuffle the rest back into your Deck.
+Prompt 1: Excavate 4 cards
+
+[1900000168]
+Name: Thick Club
+Card type: Equip Spell
+Text: Equip only to a "Marowak" monster you control. Double the equipped monster's ATK.
+
+[1900000169]
+Name: Bonemerang
+Card type: Spell
+Text: Target 1 "Marowak" monster you control; it can make a second attack during each Battle Phase this turn.
+
+[1900000170]
+Name: Mother's love
+Card type: Continuous Trap
+Text: Activate this card by discarding 1 card, then target 1 "Marowak" monster in your GY; Special Summon it. It becomes a Zombie monster, it is unaffected by your opponent's monster effects, and cannot be targeted for an attack, except by Zombie monsters.
+  When this card leaves the field, destroy that monster. When that monster is destroyed, destroy this card.
+
+[1900000171]
+Name: Hitmonlee
+Card type: Effect Monster
+Subtypes: Pokemon, Hitmon
+Attribute: EARTH
+Type: Warrior
+Level: 8
+ATK: 2600
+DEF: 2400
+Text: If you control a "Hitmon" monster, except "Hitmonlee", you can Special Summon this card (from your hand).
+  If a "Hitmon" monster attacks a Defense Position monster, inflict piercing battle damage.
+
+[1900000172]
+Name: Hitmonchan
+Card type: Effect Monster
+Subtypes: Pokemon, Hitmon
+Attribute: EARTH
+Type: Warrior
+Level: 8
+ATK: 2600
+DEF: 2400
+Text: If you control a "Hitmon" monster, except "Hitmonchan", you can Special Summon this card (from your hand).
+  Your opponent cannot target "Hitmon" monsters you control with card effects.
+
+[1900000173]
+Name: Lickitung
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Reptile
+Level: 4
+ATK: 1400
+DEF: 2000
+Text: You can toss 2 coins, and if the result is 2 heads, your opponent skips their next Battle Phase. You can only use this effect of "Lickitung" once per turn.
+Prompt 1: Toss 2 coins to skip opponent's Battle Phase
+
+[1900000174]
+Name: Elite Four
+Card type: Spell
+Text: Activate 1 of these effects;
+  1. Reveal 2 "Gym Leader" Continuous Spells with different names from your Deck, your opponent randomly adds 1 to your hand, also shuffle the other into the Deck.
+  2. Reveal from your Deck 1 "Gym Leader" Continuous Spell, 1 Spell/Trap with a different name that has Pokemon in its text, and 1 Level 7 or higher Pokemon monster, your opponent randomly adds 1 of them to your hand, also shuffle the rest into the Deck.
+Prompt 1: Reveal 2 Gym Leaders
+Prompt 2: Reveal a Gym Leader, a Pokemon Spell/Trap and a big Pokemon
+
+[1900000175]
+Name: Koffing
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Fiend
+Level: 4
+ATK: 1200
+DEF: 2000
+Text: Once per turn: You can target 1 monster your opponent controls; toss a coin, and if you call it right, place 1 Poison Counter on it. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control)
+  You can destroy this card; inflict 800 damage to your opponent. You can only activate this effect of "Koffing" once per turn.
+Prompt 1: Destroy this card to inflict damage
+Prompt 2: Toss a coin to place a Poison Counter
+
+[1900000176]
+Name: Weezing
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: DARK
+Type: Fiend
+Level: 7
+ATK: 2000
+DEF: 3000
+Text: You can Special Summon this card from your hand by Tributing 1 "Koffing" from your hand or field, or by banishing 1 "Koffing" from your GY. You can only Special Summon "Weezing" once per turn this way.
+  Once per turn, you can place 1 Poison Counter on up to 2 monsters on the field. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control)
+  If this card is destroyed and sent to the GY: Inflict 1000 damage to your opponent.
+Prompt 1: Place Poison Counters on up to 2 monsters
+
+[1900000177]
+Name: Rhyhorn
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 4
+ATK: 2300
+DEF: 2500
+Text: Gains 100 ATK for each LIGHT monster your opponent controls.
+  If this card attacks a Defense Position monster, inflict piercing battle damage to your opponent.
+
+[1900000178]
+Name: Rhydon
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Rock
+Level: 8
+ATK: 2600
+DEF: 2900
+Text: You can Special Summon this card from your hand by Tributing 1 "Rhyhorn" from your hand or field, or by banishing 1 "Rhyhorn" from your GY. You can only Special Summon "Rhydon" once per turn this way.
+  Gains 100 ATK for each LIGHT monster your opponent controls.
+  If this card attacks, it cannot declare an attack during your next Battle Phase.
+  Once per turn, when a LIGHT monster's effect is activated (Quick Effect): You can discard 1 card; negate the activation, and if you do, destroy it.
+Prompt 1: Discard a card to negate effect
+
+[1900000179]
+Name: Chansey
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Fairy
+Level: 6
+ATK: 100
+DEF: 3000
+Text: You can Normal Summon this card in face-up Defense Position.
+  During your Standby Phase: Gain 1000 LP.
+  If this card is attacked by a Warrior monster, before damage calculation: Destroy this card.
+  You can only activate 1 of these effects of "Chansey" per turn, and only once that turn (Quick Effects):
+  ● Declare 1 Counter name; remove all Counters with that name from cards you control.
+  ● Target 1 monster you control; the first time it would be destroyed by battle or card effect this turn, it is not.
+  ● Return this card to the hand; Special Summon 1 Level 4 or lower Pokémon monster from your hand.
+Prompt 1: Remove Counters
+Prompt 2: Give monster battle protection
+Prompt 3: Return to hand to Special Summon a monster
+Prompt 4: Change to face-up Defense Position?
+
+[1900000180]
+Name: Tangela
+Card type: Effect Monster
+Subtypes: Pokemon, Flip
+Attribute: EARTH
+Type: Plant
+Level: 4
+ATK: 1200
+DEF: 2000
+Text: FLIP: You can add 1 Level 4 or lower Plant Pokémon monster from your Deck to your hand.
+  While "Sunny Day" is on the field, your opponent cannot target Plant Pokémon monsters you control with card effects.
+  During your Standby Phase: Gain 500 LP.
+Prompt 1: Add 1 monster to your hand
+
+[1900000181]
+Name: Kangaskhan
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 7
+ATK: 2700
+DEF: 2700
+Text: If this card is Normal or Special Summoned: Inflict 500 damage to your opponent, and if you do, draw 1 card. You can only activate this effect of "Kangaskhan" once per turn.
+  Once per turn (Quick Effect): You can change this card to face-down Defense Position.
+  If this card is destroyed by battle or by your opponent's card effect: Add 1 Level 4 or lower Pokémon monster from your Deck to your hand.
+Prompt 1: Inflict damage
+Prompt 2: Change this card's battle position
+
+[1900000182]
+Name: Pokemon Center
+Card type: Spell
+Text: If you have 6 or more Pokémon monsters in your GY: You can target 3 of them; add them to your hand.
+
+[1900000183]
+Name: Chansey's Lucky Punch
+Card type: Equip Spell
+Text: Equip only to "Chansey". The equipped monster can make a second attack during each Battle Phase.
+
+[1900000184]
+Name: Horsea
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Sea Serpent
+Level: 4
+ATK: 1600
+DEF: 1500
+Text: Once per turn, if this card is targeted for an attack: You can pay 800 LP; negate that attack.
+Prompt 1: Pay 800 LP to negate attack
+
+[1900000185]
+Name: Seadra
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Sea Serpent
+Level: 6
+ATK: 2300
+DEF: 2300
+Text: You can Special Summon this card from your hand by Tributing 1 "Horsea" from your hand or field, or by banishing 1 "Horsea" from your GY. You can only Special Summon "Seadra" once per turn this way. If Summoned this way: You can add 1 Level 4 or lower Aqua, Sea Serpent or Fish Pokémon from your Deck to your hand.
+  If this card is destroyed by battle: Roll a six-sided die, then place Poison Counters on monster(s) your opponent controls up to the result. (During the Standby Phase, each player takes 300 damage for each Poison Counter on cards they control.)
+Prompt 1: Add monster to your hand
+
+[1900000186]
+Name: Goldeen
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Fish
+Level: 4
+ATK: 1500
+DEF: 1200
+Text: If "Umi" is on the field, this card can make a second attack during each Battle Phase.
+
+[1900000187]
+Name: Seaking
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Fish
+Level: 6
+ATK: 2500
+DEF: 2000
+Text: You can Special Summon this card from your hand by Tributing 1 "Goldeen" from your hand or field, or by banishing 1 "Goldeen" from your GY. You can only Special Summon "Seaking" once per turn this way. If Summoned this way: You can add 1 "Waterfall" from your Deck to your hand, but you cannot activate cards, or effects of cards, with that same name for the rest of this turn.
+  If "Umi" is on the field, when this card attacks a Defense Position monster, inflict piercing battle damage to your opponent.
+  While "Rain Dance" is on the field: You can Special Summon 1 Level 4 or lower Aqua, Sea Serpent or Fish monster from your hand, also you cannot Special Summon monsters, except Aqua, Sea Serpent or Fish monsters, until the end of the turn. You can only activate this effect of "Seaking" once per turn.
+Prompt 1: Add 1 "Waterfall" to your hand
+Prompt 2: Special Summon monster
+
+[1900000188]
+Name: Waterfall
+Card type: Equip Spell
+Text: Equip only to an Aqua, Sea Serpent or Fish monster you control. The equipped monster gains 500 ATK.
+  If the equipped monster inflicts battle damage to your opponent by a direct attack: You can flip a coin until you get Tails, then apply the following effect based on the number of Heads you got.
+  ● 1: Banish 1 card from your opponent's GY.
+  ● 2+: Randomly banish cards from your opponent's hand, up to the number of Heads -1.
+Prompt 1: Flip coins
+
+[1900000189]
+Name: Staryu
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 4
+ATK: 1700
+DEF: 1000
+Text: If this card is Normal Summoned: You can excavate the top 3 cards of your Deck, and if there are any Level 4 or lower Pokémon monsters among them, add 1 to your hand, also shuffle the rest into the Deck.
+Prompt 1: Excavate cards
+
+[1900000190]
+Name: Starmie
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Aqua
+Level: 8
+ATK: 3000
+DEF: 2400
+Text: You can Special Summon this card from your hand by Tributing 1 "Staryu" from your hand or field, or by banishing 1 "Staryu" from your GY. You can only Special Summon "Starmie" once per turn this way.
+  This card is also treated as a Spellcaster.
+  If this card is Normal or Special Summoned: You can discard 1 card; destroy 1 face-up Spell your opponent controls. If this card was Special Summoned by its own effect, or the effect of "Water Stone", you don't have to discard 1 card to activate this effect.
+  During the Standby Phase: You can excavate the top 3 cards of your Deck, and if there are any Pokémon monsters among them, add 1 to your hand, also shuffle the rest into the Deck.
+Prompt 1: Destroy Spell card
+Prompt 2: Excavate cards
+
+[1900000191]
+Name: Mr. Mime
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Spellcaster
+Level: 7
+ATK: 2300
+DEF: 2700
+Text: If this card is Summoned: You can declare 1 card type (Monster, Spell or Trap); while this card is face-up on the field, your opponent cannot target monsters you control with card effects of the declared type.
+  During the End Phase, if you control this Tribute Summoned card: You can change this card to Defense Position, and if you do, destroy 1 Set card your opponent controls.
+Prompt 1: Declare card type
+Prompt 2: Change battle position
+Prompt 3: Barrier: Monster effects can't target
+Prompt 4: Barrier: Spell effects can't target
+Prompt 5: Barrier: Trap effects can't target
+
+[1900000192]
+Name: Scyther
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Insect
+Level: 8
+ATK: 2700
+DEF: 1700
+Text: Gains 300 ATK for each Insect monster in your GY.
+  If this card is Tribute Summoned, Summoned by the activated effect of an Insect monster, or Summoned by the effect of "U-Turn", it gains the following effect.
+  ● Can make a second attack during each Battle Phase.
+Prompt 1: Can attack twice
+
+[1900000193]
+Name: Jynx
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Spellcaster
+Level: 5
+ATK: 2500
+DEF: 1200
+Text: When you Ritual Summon 1 WATER monster, you can banish this card from your field or GY as the entire Tribute.
+  If this card is Normal Summoned: You can add 1 "Electabuzz" from your Deck to your hand.
+  If this Tribute Summoned card inflicts battle damage to your opponent: Excavate the top card of your Deck, and if it is a WATER Pokémon monster, your opponent cannot activate Spell cards during their next turn, also shuffle it back into the Deck.
+Prompt 1: Add 1 "Electabuzz" to your hand
+
+[1900000194]
+Name: Electabuzz
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Thunder
+Level: 5
+ATK: 2500
+DEF: 1800
+Text: When you Ritual Summon 1 LIGHT monster, you can banish this card from your field or GY as the entire Tribute.
+  If this card is Normal Summoned: You can add 1 "Magmar" from your Deck to your hand.
+  If this Tribute Summoned card inflicts battle damage to your opponent: Excavate the top card of your Deck, and if it is a LIGHT Pokémon monster, your opponent skips their next Battle Phase, also shuffle it back into the Deck.
+Prompt 1: Add 1 "Magmar" to your hand
+
+[1900000195]
+Name: Magmar
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Pyro
+Level: 5
+ATK: 2500
+DEF: 1800
+Text: When you Ritual Summon 1 FIRE monster, you can banish this card from your field or GY as the entire Tribute.
+  If this card is Normal Summoned: You can add 1 "Jynx" from your Deck to your hand.
+  If this Tribute Summoned card inflicts battle damage to your opponent: Excavate the top card of your Deck, and if it is a FIRE Pokémon monster, your opponent cannot activate Trap cards until the end of your next turn, also shuffle it back into the Deck.
+Prompt 1: Add 1 "Jynx" to your hand
+
+[1900000196]
+Name: Pinsir
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Insect
+Level: 6
+ATK: 2500
+DEF: 2200
+Text: This card's ATK/DEF cannot be changed by your opponent's card effects.
+  If this card attacks a monster, that monster's effects are negated until the end of the Damage Step.
+  Negate the effects of monsters destroyed by battle with Insect monsters you control.
+
+[1900000197]
+Name: Tauros
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 8
+ATK: 2900
+DEF: 2600
+Text: You can Tribute Summon this card by Tributing 1 Beast Pokémon monster.
+  When this card is Normal Summoned: Halve the ATK of all monsters your opponent controls.
+  During the End Phase, if your opponent drew a card(s) this turn (except during the Draw Phase): You can target 1 Pokémon monster in your GY or banishment; add it to your hand.
+  If your opponent drew a card(s) (except during the Draw Phase) during the previous turn, this turn this card gains the following effect:
+  ● If this card battles a Defense Position monster, inflict double piercing battle damage to your opponent.
+Prompt 1: Tribute using only 1 Beast Pokemon monster
+Prompt 2: Add monster to hand
+
+[1900000198]
+Name: Magikarp
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Fish
+Level: 1
+ATK: 0
+DEF: 0
+Text: In the distant past, it was somewhat stronger than the horribly weak descendants that exist today.
+
+[1900000199]
+Name: Gyarados
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Sea Serpent
+Level: 9
+ATK: 3100
+DEF: 2500
+Text: Cannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by Tributing 1 "Magikarp".
+  This card's Special Summon cannot be negated.
+  When this card is Special Summoned: Halve the ATK of all monsters your opponent controls, also negate their effects until the end of this turn.
+  If this card is attacked by a Thunder Pokémon monster, before damage calculation: Destroy this card.
+  When a Normal Trap card is activated (Quick Effect): You can discard 1 card; negate the activation, and if you do, destroy it.
+Prompt 1: Discard a card to negate Trap
+
+[1900000200]
+Name: Shiny Gyarados
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Sea Serpent
+Level: 7
+ATK: 2700
+DEF: 2300
+Text: When this card is Summoned: You can target 1 other Pokémon monster you control; add 1 monster from your Deck to your hand whose name is mentioned in the targeted monster's text, but you cannot Special Summon monsters with that name until the end of this turn.
+  If this card destroys a monster by battle: You can discard 1 Pokémon monster; draw 2 cards.
+  You can only activate 1 "Shiny Gyarados" effect per turn, and only once that turn.
+Prompt 1: Add monster to hand
+Prompt 2: Discard to draw 2 cards
+
+[1900000201]
+Name: Pokemon Trainer - Fisherman
+Card type: Spell
+Subtypes: Pokemon Trainer
+Text: Discard 1 WATER monster; add 1 Level 4 or lower Fish Pokémon monster from your Deck to your hand.
+
+[1900000206]
+Name: Eevee
+Card type: Normal Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 3
+ATK: 1200
+DEF: 1200
+Text: EEVEE has an unstable genetic makeup that suddenly mutates due to the environment in which it lives. Radiation from various STONES causes this POKEMON to evolve.
+
+[1900000202]
+Name: Lapras
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Sea Serpent
+Level: 7
+ATK: 2500
+DEF: 3000
+Text: Your opponent cannot activate cards or effects during the Battle Phase.
+  If this card is Normal or Special Summoned: You can shuffle all WATER monsters in your GY into the Deck, then if you shuffled at least 3 monsters, draw 1 card.
+  During your Standby Phase: You can draw 1 card for each WATER monster your opponent controls.
+  During the End Phase of a turn in which you Summoned this card: Add 1 "Surf" from your Deck to your hand.
+Prompt 1: Shuffle Water monsters into the Deck
+Prompt 2: Draw card(s)
+Prompt 3: Add 1 "Surf" to your hand
+
+[1900000203]
+Name: Ditto
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Aqua
+Level: 2
+ATK: 0
+DEF: 1500
+Text: Cannot be Special Summoned from the Deck.
+  When this card is Normal or Special Summoned: Target 1 monster your opponent controls; this card's name, Attribute, Type, Level and original ATK become that monster's, also this card gains that monster's effects.
+
+[1900000204]
+Name: Surf
+Card type: Spell
+Text: Target 1 Level 5 or higher Aqua, Sea Serpent or Fish monster you control; apply one of the following effects, also the targeted monster cannot declare an attack this turn.
+  ● Destroy all other FIRE monsters on the field, also destroy all other non-WATER monsters whose DEF is lower than the targeted monster's ATK.
+  ● Excavate the top 3 cards of your Deck, add any Aqua, Sea Serpent or Fish monsters among them to your hand and shuffle the rest into the Deck.
+Prompt 1: Destroy FIRE and weaker monsters
+Prompt 2: Excavate the top 3 cards
+
+[1900000205]
+Name: Quick-Powder
+Card type: Quick-Play Spell
+Text: Special Summon 1 "Ditto" from your hand or GY.
+
+[1900000207]
+Name: Vaporeon
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Beast
+Level: 7
+ATK: 2400
+DEF: 2900
+Text: You can Special Summon this card (from your Deck) by Tributing 1 "Eevee" and discarding 1 "Water Stone".
+  You can Special Summon this card from your hand by Tributing 1 "Eevee" from your hand or field, or by banishing 1 "Eevee" from your GY. You can only Special Summon "Vaporeon" once per turn.
+  Your opponent cannot target WATER monsters you control for attacks, except this one.
+  Gains 300 DEF for each other WATER monster on the field.
+  During your Standby Phase: Gain 500 LP for each other WATER monster on the field.
+
+[1900000208]
+Name: Jolteon
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Beast
+Level: 7
+ATK: 2800
+DEF: 2000
+Text: You can Special Summon this card (from your Deck) by Tributing 1 "Eevee" and discarding 1 "Thunder Stone".
+  You can Special Summon this card from your hand by Tributing 1 "Eevee" from your hand or field, or by banishing 1 "Eevee" from your GY. You can only Special Summon "Jolteon" once per turn.
+  Your opponent cannot target this card with Trap effects.
+  Can attack all LIGHT monsters your opponent controls, once each.
+  Once per turn (Quick Effect): You can return this card to your hand, and if you do, Special Summon 1 Pokemon monster from your hand other than "Jolteon", but it cannot declare an attack this turn.
+Prompt 1: Return to hand to Special Summon a Pokemon
+
+[1900000209]
+Name: Flareon
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Beast
+Level: 7
+ATK: 2600
+DEF: 2400
+Text: You can Special Summon this card (from your Deck) by Tributing 1 "Eevee" and discarding 1 "Fire Stone".
+  You can Special Summon this card from your hand by Tributing 1 "Eevee" from your hand or field, or by banishing 1 "Eevee" from your GY. You can only Special Summon "Flareon" once per turn.
+  Gains 300 ATK for each other FIRE monster on the field.
+  If this card attacks a Defense Position monster, inflict piercing battle damage to your opponent.
+  During your Standby Phase: Lose 300 LP.
+
+[1900000210]
+Name: Fossil Pkmn - Omanyte
+Card type: Effect Monster
+Subtypes: Pokemon, Fossil Pkmn, Fossil
+Attribute: WATER
+Type: Rock
+Level: 4
+ATK: 1900
+DEF: 2000
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by banishing 2 WATER monsters from your GY.
+  Once per turn, while "Rain Dance" is on the field (Quick Effect): You can change this card's battle position.
+Prompt 1: Change this card's battle position
+
+[1900000211]
+Name: Fossil Pkmn - Omastar
+Card type: Effect Monster
+Subtypes: Pokemon, Fossil Pkmn, Fossil
+Attribute: WATER
+Type: Rock
+Level: 7
+ATK: 2500
+DEF: 3000
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 "Omanyte" you control, or by banishing 1 "Omanyte" from your GY. You can only Special Summon "Omastar" once per turn this way.
+  Once per turn, while "Rain Dance" is on the field (Quick Effect): You can change this card's battle position.
+  If this card destroys a monster by battle while "Rain Dance" is on the field: You can add 1 "Fossil Pkmn" monster from your Deck to your hand.
+Prompt 1: Change this card's battle position
+Prompt 2: Add "Fossil Pkmn" monster to your hand
+
+[1900000212]
+Name: Fossil Pkmn - Kabuto
+Card type: Effect Monster
+Subtypes: Pokemon, Fossil Pkmn, Fossil
+Attribute: WATER
+Type: Rock
+Level: 4
+ATK: 1700
+DEF: 1900
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by banishing 2 WATER monsters from your GY.
+  If a "Fossil Pkmn" monster you control would be destroyed by battle while "Rain Dance" is on the field, you can banish this card from your GY instead. You can only use this effect of "Fossil Pkmn - Kabuto" once per turn.
+Prompt 1: Banish this card from GY to prevent battle destruction
+
+[1900000213]
+Name: Fossil Pkmn - Kabutops
+Card type: Effect Monster
+Subtypes: Pokemon, Fossil Pkmn, Fossil
+Attribute: WATER
+Type: Rock
+Level: 7
+ATK: 2750
+DEF: 2400
+Text: Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 "Kabuto" you control, or by banishing 1 "Kabuto" from your GY. You can only Special Summon "Kabutops" once per turn this way.
+  Once per turn, if this card destroys a monster by battle while "Rain Dance" is on the field: This card can make a second attack in a row.
+  If this card is sent from the field to the GY: You can target 1 of your banished "Fossil" cards; shuffle it into the Deck, then draw 1 card.
+Prompt 1: Attack once again in a row
+Prompt 2: Shuffle card into Deck
+
+[1900000214]
+Name: Fossil Maniac
+Card type: Spell
+Subtypes: Fossil
+Text: Add 1 "Fossil Pkmn" monster from your Deck to your hand.
+
+[1900000215]
+Name: Fossil Restoration Center
+Card type: Spell
+Subtypes: Fossil
+Text: Special Summon 1 "Fossil Pkmn" monster from your hand or either player's GY, ignoring its Summoning Conditions.
+
+[1900000216]
+Name: Fossil Pkmn - Aerodactyl
+Card type: Effect Monster
+Subtypes: Pokemon, Fossil Pkmn, Fossil
+Attribute: WIND
+Type: Rock
+Level: 9
+ATK: 3000
+DEF: 2500
+Text: Cannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by banishing 2 "Fossil Pkmn" monsters from your GY.
+  This card's Special Summon cannot be negated.
+  If this card destroys a monster by battle, banish it instead of sending it to the GY.
+  Once per turn: You can banish 1 "Fossil" card from your GY, then target 1 card on the field; banish it.
+Prompt 1: Banish Fossil to banish card on the field
+
+[1900000217]
+Name: Snorlax
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: EARTH
+Type: Beast
+Level: 8
+ATK: 3000
+DEF: 3500
+Text: Unaffected by the effects of WATER and FIRE monsters your opponent controls.
+  Your opponent cannot place Counters on this card.
+  During the End Phase: You can change this card to face-down Defense Position.
+  If this card is destroyed: You can banish 2 Beast, Winged Beast and/or Insect monsters from your GY; Special Summon this card.
+Prompt 1: Banish 2 cards to Special Summon "Snorlax"
+Prompt 2: Change to face-down Defense Position
+
+[1900000218]
+Name: Leftovers
+Card type: Equip Spell
+Text: Equip only to a Pokémon monster with 3000 or more DEF.
+  Once per turn, if the equipped monster would be destroyed by a card effect while in Defense Position, you can draw 1 card instead, but if you do, during the End Phase, place 1 card from your hand on the bottom of the Deck, otherwise destroy this card and lose 1000 LP.
+Prompt 1: Draw 1 card instead of being destroyed
+Prompt 2: Select 1 card to place on the bottom of the Deck
+
+[1900000219]
+Name: Articuno
+Card type: Ritual Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Winged Beast
+Level: 9
+ATK: 2900
+DEF: 3300
+Text: You can Ritual Summon this card with "Legendary Bird Trio".
+  If this card is Ritual Summoned: You can roll a six-sided die, then banish cards from your opponent's GY, up to the result x 2. You can only activate this effect of "Articuno" once per turn.
+  Once per turn, when your opponent activates a card or effect (Quick Effect): You can discard 1 card; negate the activation, and if you do, destroy it.
+  Once per turn (Quick Effect): You can banish 1 card from your opponent's GY.
+Prompt 1: Discard card to negate
+Prompt 2: Banish card from opponent's GY
+Prompt 3: Roll a die to banish cards
+
+[1900000220]
+Name: Zapdos
+Card type: Ritual Effect Monster
+Subtypes: Pokemon
+Attribute: LIGHT
+Type: Winged Beast
+Level: 9
+ATK: 3300
+DEF: 3000
+Text: You can Ritual Summon this card with "Legendary Bird Trio".
+  If this card is Ritual Summoned: Your opponent discards 2 random cards. You can only activate this effect of "Zapdos" once per turn.
+  Your opponent cannot target this card with card effects.
+  Once per turn: You can destroy 1 card on the field.
+Prompt 1: Destroy card on the field
+Prompt 2: Opponent discards 2 random cards
+
+[1900000221]
+Name: Moltres
+Card type: Ritual Effect Monster
+Subtypes: Pokemon
+Attribute: FIRE
+Type: Winged Beast
+Level: 9
+ATK: 3200
+DEF: 2500
+Text: You can Ritual Summon this card with "Legendary Bird Trio".
+  If this card is Ritual Summoned: Inflict 1500 damage to your opponent. You can only activate this effect of "Moltres" once per turn.
+  If a card(s) is sent to your opponent's GY: Inflict 300 damage to your opponent for each of those cards.
+Prompt 1: Inflict 1500 damage
+
+[1900000222]
+Name: Legendary Bird Trio
+Card type: Ritual Spell
+Text: This card can be used to Ritual Summon "Articuno", "Zapdos" or "Moltres". You must also Tribute monsters from your hand or field, whose total Levels exactly equal the Level of the Ritual Monster.
+  During your End Phase, except the turn this card was sent to the GY: You can shuffle 2 of your banished Pokemon monsters into the Deck; shuffle this card into the Deck, and if you do, draw 1 card.
+Prompt 1: Shuffle into the Deck to draw 1 card
+
+[1900000223]
+Name: Dratini
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Dragon
+Level: 4
+ATK: 1400
+DEF: 1000
+Text: If this card is Normal Summoned: You can send 1 Level 5 or higher Dragon Pokemon monster from your Deck to the GY.
+  During the End Phase, if this card was destroyed by battle and sent to the GY this turn: You can banish this card; add 1 Dragon Pokemon monster from your GY to your hand.
+Prompt 1: Banish this card to add 1 monster to hand
+Prompt 2: Send a Dragon Pokemon to the GY
+
+[1900000224]
+Name: Dragonair
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WATER
+Type: Dragon
+Level: 6
+ATK: 2200
+DEF: 2400
+Text: You can Special Summon this card from your hand by Tributing 1 "Dratini" from your hand or field, or by banishing 1 "Dratini" from your GY. You can only Special Summon "Dragonair" once per turn this way.
+  Once per turn: You can change this card to face-down Defense Position.
+  If this card is flipped face-up: You can target 1 other monster you control; it cannot be destroyed by card effects until the end of this turn.
+Prompt 1: Change to face-down Defense Position
+Prompt 2: Protect a monster from card effects
+
+[1900000225]
+Name: Dragonite
+Card type: Effect Monster
+Subtypes: Pokemon
+Attribute: WIND
+Type: Dragon
+Level: 10
+ATK: 3200
+DEF: 3100
+Text: You can Special Summon this card (from your hand) by Tributing 1 "Dragonair".
+  If this card attacks a Defense Position monster, inflict piercing battle damage to your opponent.
+  If this card is attacked, it cannot declare an attack during the next turn.
+  If this card is destroyed and sent to the GY: You can banish 1 Dragon Pokemon monster from your hand or GY; Special Summon this card in Defense Position.
+Prompt 1: Banish a Dragon to Special Summon "Dragonite"
+
+[1900000226]
+Name: Pokemon Master - Lance
+Card type: Spell
+Subtypes: Pokemon Master
+Text: Add 1 Level 7 or higher WIND non-Winged Beast Pokemon monster from your Deck to your hand.
+  If a Level 7 or higher WIND non-Winged Beast monster(s) would be destroyed by card effect, you can banish this card from your GY instead. You can only use 1 "Pokemon Master - Lance" effect per turn, and only once that turn.
+Prompt 1: Banish "Pokemon Master - Lance" instead of destruction

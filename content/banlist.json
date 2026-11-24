@@ -1,0 +1,16 @@
+{
+  "_help": "The banlist. Forbidden = 0 copies in a deck, Limited = 1, Semi-Limited = 2. Edit it in the game (Banlist editor, admins) or here by exact English card name, then restart the server.",
+  "updated": "2026-11-23",
+  "forbidden": [],
+  "limited": [
+    "Dark Hole",
+    "Delinquent Duo",
+    "Graceful Charity",
+    "Heavy Storm",
+    "Mirror Force",
+    "Monster Reborn",
+    "Pot of Greed",
+    "Raigeki"
+  ],
+  "semiLimited": []
+}

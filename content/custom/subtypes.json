@@ -1,0 +1,19 @@
+{
+  "_help": "Subtypes for custom cards (like Toon). Each name gets an archetype number that scripts use to check it: c:IsSetCard(SET_POKEMON). To add a new subtype, add a line here with the next number (0xf03, 0xf04...) and add the matching SET_ line in scripts/custom_utility.lua. Real card types (Gemini, Tuner, Toon, Spirit, Union, Flip) can also be written in Subtypes: and work automatically. (0xf0a is taken: it is the hidden \"mentions Pokemon in its text\" mark for Spells/Traps.)",
+  "Pokemon": "0xf01",
+  "Pikachu": "0xf02",
+  "Nido": "0xf03",
+  "Nidoran": "0xf04",
+  "Weather Condition": "0xf05",
+  "Team Rocket": "0xf06",
+  "Gym Leader": "0xf07",
+  "Poli": "0xf08",
+  "Slow": "0xf09",
+  "Marowak": "0xf0b",
+  "Exegg": "0xf0c",
+  "Hitmon": "0xf0d",
+  "Pokemon Trainer": "0xf0e",
+  "Fossil Pkmn": "0xf0f",
+  "Fossil": "0xf10",
+  "Pokemon Master": "0xf11"
+}
