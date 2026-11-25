@@ -249,11 +249,18 @@ function connectRoom(roomId) {
 
 // ---- actions (both modes)
 
+/** The hand card the player just used, so its animation starts from that exact copy (not another one with the same name). */
+let lastHandPick = null;
+
 async function answer(picks) {
   if (busy || !view || !view.decision) return;
   busy = true;
   requestError = '';
   closePopup();
+  const picked = picks && picks.length === 1 ? view.decision.choices.find((c) => c.id === picks[0]) : null;
+  if (picked && picked.card && picked.card.location === LOC.HAND) {
+    lastHandPick = { player: picked.card.controller, sequence: picked.card.sequence, code: picked.card.code, at: Date.now() };
+  }
   try {
     if (mode === 'online') {
       const { ok, data } = await api('POST', `/api/room/${online.roomId}/answer`, { token: online.token, decisionId: view.decision.id, picks });
@@ -999,6 +1006,13 @@ function runFx() {
 function hideHandCard(player, code) {
   const hand = document.querySelector(`[data-zone="${player}-${LOC.HAND}"]`);
   if (!hand) return;
+  // The copy you clicked (if it was you, a moment ago); otherwise the first card with that name.
+  const pick = lastHandPick;
+  if (pick && pick.player === player && pick.code === code && Date.now() - pick.at < 30000) {
+    lastHandPick = null;
+    const exact = document.querySelector(`[data-zone="${player}-${LOC.HAND}-${pick.sequence}"]`);
+    if (exact) { exact.style.visibility = 'hidden'; return; }
+  }
   const cards = [...hand.querySelectorAll('.card')].filter((c) => c.style.visibility !== 'hidden');
   const match = cards.find((c) => c.dataset.code === String(code)) || cards.filter((c) => c.classList.contains('back')).pop();
   if (match) match.style.visibility = 'hidden';

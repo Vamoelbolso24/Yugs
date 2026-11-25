@@ -51,6 +51,8 @@ export interface DeckSummary {
   active: boolean;
   /** Empty when the deck can be used in duels. */
   problems: string[];
+  /** Admin decks only: banlist / copy rules it breaks, so it works in Test duels but not against players. */
+  testOnly?: string[];
   updatedAt: number;
 }
 
@@ -298,6 +300,23 @@ export class PlayerData {
   }
 
   /** Everything that stops a deck from being used in a duel (empty list = valid). owned = null: admin, owns everything. */
+  /** Banlist and copy-limit problems for one card used n times. */
+  private ruleNotes(code: number, n: number): string[] {
+    const name = this.cards.name(code);
+    const limit = banlistLimit(this.content.banlist, code);
+    if (limit === 0) return [`${name} is Forbidden by the banlist.`];
+    if (n > limit && limit < MAX_COPIES) return [`${name} is ${limit === 1 ? 'Limited' : 'Semi-Limited'}: max ${limit} ${limit === 1 ? 'copy' : 'copies'} (you have ${n}).`];
+    if (n > MAX_COPIES) return [`${name}: ${n} copies (max ${MAX_COPIES}).`];
+    return [];
+  }
+
+  /** Admin decks: the banlist / copy-limit rules they break (fine in Test duels, not in duels against players). */
+  testOnlyNotes(main: number[], extra: number[]): string[] {
+    const used = new Map<number, number>();
+    for (const code of [...main, ...extra]) used.set(this.cards.baseCode(code), (used.get(this.cards.baseCode(code)) ?? 0) + 1);
+    return [...used].flatMap(([code, n]) => this.ruleNotes(code, n));
+  }
+
   deckProblems(main: number[], extra: number[], owned: Map<number, number> | null): string[] {
     const problems: string[] = [];
     if (main.length < 40) problems.push(`Main Deck has ${main.length} cards (needs at least 40).`);
@@ -307,12 +326,12 @@ export class PlayerData {
     for (const code of [...main, ...extra]) used.set(this.cards.baseCode(code), (used.get(this.cards.baseCode(code)) ?? 0) + 1);
     for (const [code, n] of used) {
       const name = this.cards.name(code);
-      const limit = banlistLimit(this.content.banlist, code);
-      if (limit === 0) problems.push(`${name} is Forbidden by the banlist.`);
-      else if (n > limit && limit < MAX_COPIES) problems.push(`${name} is ${limit === 1 ? 'Limited' : 'Semi-Limited'}: max ${limit} ${limit === 1 ? 'copy' : 'copies'} (you have ${n}).`);
-      else if (n > MAX_COPIES) problems.push(`${name}: ${n} copies (max ${MAX_COPIES}).`);
-      const have = owned === null ? MAX_COPIES : owned.get(code) ?? 0;
-      if (n > have) problems.push(`${name}: uses ${n} but you own ${have}.`);
+      // Admin decks (owned === null) may break the banlist and the 3-copy rule: they become "Test duels only".
+      if (owned !== null) problems.push(...this.ruleNotes(code, n));
+      if (owned !== null) {
+        const have = owned.get(code) ?? 0;
+        if (n > have) problems.push(`${name}: uses ${n} but you own ${have}.`);
+      }
     }
     for (const code of [...main, ...extra]) if (Number(this.cards.get(code)?.data.type ?? 0) & 0x4000) problems.push(`${this.cards.name(code)} is a Token and can't be put in a Deck.`);
     for (const code of [...main, ...extra]) if (this.cards.get(code)?.hidden) problems.push(`${this.cards.name(code)} can't be put in a Deck.`);
@@ -324,7 +343,10 @@ export class PlayerData {
   private summary(row: DeckRow, activeId: number | null, owned: Map<number, number> | null): DeckSummary {
     const main = JSON.parse(row.main) as number[];
     const extra = JSON.parse(row.extra) as number[];
-    return { id: row.id, name: row.name, main, extra, active: row.id === activeId, problems: this.deckProblems(main, extra, owned), updatedAt: row.updated_at };
+    return {
+      id: row.id, name: row.name, main, extra, active: row.id === activeId, problems: this.deckProblems(main, extra, owned),
+      testOnly: owned === null ? this.testOnlyNotes(main, extra) : [], updatedAt: row.updated_at,
+    };
   }
 
   decks(userId: number): DeckSummary[] {
@@ -388,6 +410,7 @@ export class PlayerData {
     const deck = this.decks(userId).find((d) => d.id === profile.activeDeckId);
     if (!deck) return { ok: false, error: 'Pick an active deck in the deck editor first.' };
     if (deck.problems.length) return { ok: false, error: `Your active deck "${deck.name}" can't be used: ${deck.problems[0]}` };
+    if (deck.testOnly?.length) return { ok: false, error: `Your active deck "${deck.name}" is for Test duels only (${deck.testOnly[0]!.replace(/\.$/, "")}). Pick another active deck to duel players.` };
     return { ok: true, value: { main: deck.main, extra: deck.extra } };
   }
 }

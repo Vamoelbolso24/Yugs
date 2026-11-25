@@ -478,6 +478,7 @@ function openDeckInEditor(deck) {
     main: deck ? [...deck.main] : [],
     extra: deck ? [...deck.extra] : [],
     problems: deck ? deck.problems : [],
+    testOnly: deck ? deck.testOnly || [] : [],
     dirty: false,
     // search filters and sort order stay when you switch decks
     f: (editor && editor.f) || CardFilter.emptyFilter(),
@@ -509,7 +510,7 @@ function renderDeckEditor(box) {
   const top = el('div', 'screen-top');
   const select = el('select', 'deck-select');
   for (const d of cache.decks) {
-    const o = el('option', '', `${d.name}${d.active ? ' (active)' : ''}${d.problems.length ? ' - unfinished' : ''}`);
+    const o = el('option', '', `${d.name}${d.active ? ' (active)' : ''}${d.problems.length ? ' - unfinished' : d.testOnly && d.testOnly.length ? ' - test only' : ''}`);
     o.value = String(d.id);
     if (d.id === ed.deckId) o.selected = true;
     select.appendChild(o);
@@ -546,6 +547,9 @@ function renderDeckEditor(box) {
     const ul = el('ul', 'problems');
     for (const p of ed.problems.slice(0, 6)) ul.appendChild(el('li', '', p));
     box.appendChild(ul);
+  }
+  if (!ed.dirty && !ed.problems.length && ed.testOnly && ed.testOnly.length) {
+    box.appendChild(el('p', 'notice small', `Test duels only (admin): this deck breaks the banlist or the 3-copy rule (${ed.testOnly.slice(0, 3).join(' ')}). It can't be used against players.`));
   }
 
   const layout = el('div', 'editor');
@@ -708,7 +712,14 @@ function addCard(code, have, inDeck) {
   const ed = editor;
   ed.message = '';
   const ban = banStatus(code);
-  if (ban && inDeck >= BAN_MAX[ban]) ed.message = ban === 'forbidden' ? `${cardName(code)} is Forbidden.` : `${cardName(code)} is ${BAN_LABEL[ban]}: max ${BAN_MAX[ban]}.`;
+  const admin = currentUser && currentUser.isAdmin; // admins may ignore the banlist and the 3-copy rule (Test duels only)
+  if (admin && isExtraCard(code) && ed.extra.length >= 15) ed.message = 'The Extra Deck is full (15).';
+  else if (admin && !isExtraCard(code) && ed.main.length >= 60) ed.message = 'The Main Deck is full (60).';
+  else if (admin) {
+    (isExtraCard(code) ? ed.extra : ed.main).push(code);
+    ed.dirty = true;
+    if (ban || inDeck >= 3) ed.message = 'Over the banlist / 3-copy limit: this deck will be for Test duels only.';
+  } else if (ban && inDeck >= BAN_MAX[ban]) ed.message = ban === 'forbidden' ? `${cardName(code)} is Forbidden.` : `${cardName(code)} is ${BAN_LABEL[ban]}: max ${BAN_MAX[ban]}.`;
   else if (inDeck >= 3) ed.message = 'Max 3 copies of a card.';
   else if (inDeck >= have) ed.message = `You only own ${have}.`;
   else if (isExtraCard(code) && ed.extra.length >= 15) ed.message = 'The Extra Deck is full (15).';
@@ -738,8 +749,10 @@ async function saveDeck() {
   } else {
     ed.deckId = data.deck.id;
     ed.problems = data.deck.problems;
+    ed.testOnly = data.deck.testOnly || [];
     ed.dirty = false;
-    ed.message = data.deck.problems.length ? 'Saved, but this deck is not ready to duel yet:' : 'Saved. This deck is ready to duel.';
+    ed.message = data.deck.problems.length ? 'Saved, but this deck is not ready to duel yet:'
+      : ed.testOnly.length ? 'Saved. This deck works in Test duels only.' : 'Saved. This deck is ready to duel.';
     await fetchData('decks');
   }
   render();
