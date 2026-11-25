@@ -74,6 +74,21 @@ async function loadSiteStatus() {
   } catch { /* server restarting */ }
 }
 
+/** Community Discord: where players meet to set up duels while the ladder is small. */
+const DISCORD_URL = 'https://discord.gg/yZAxvH4Sw';
+function discordBox() {
+  const box = el('div', 'discord-box');
+  const text = el('div', 'discord-text');
+  text.append(el('b', '', 'Join the Yugs Discord'),
+    el('span', '', 'Not many players online yet? Meet other duelists there, set up duels, share decks and tell us about bugs.'));
+  const link = el('a', 'discord-button', 'Join the Discord');
+  link.href = DISCORD_URL;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  box.append(text, link);
+  return box;
+}
+
 /** The site logo (content/branding/logo.webp on the server); just the word "Yugs" if there is none. */
 let logoMissing = false;
 function siteLogo() {
@@ -1357,6 +1372,7 @@ function renderLobby() {
   box.appendChild(el('p', 'muted', 'Yugs: Playground Dueling is in beta: a free Yu-Gi-Oh! ladder with packs, your own decks and some custom cards.'));
   if (!currentUser) {
     box.appendChild(authForm('Log in or create an account to start dueling.'));
+    box.appendChild(discordBox());
     return;
   }
   box.appendChild(userBar());

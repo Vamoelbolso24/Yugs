@@ -114,6 +114,7 @@ function renderMenus(box) {
 function renderHome(box) {
   box.appendChild(userBarEl());
   if (menuMessage) box.appendChild(el('div', 'notice', menuMessage));
+  box.appendChild(discordBox());
   if (profile.freePacks > 0) {
     const banner = el('div', 'banner');
     banner.append(el('b', '', `You have ${profile.freePacks} free pack${profile.freePacks === 1 ? '' : 's'} to open!`),
