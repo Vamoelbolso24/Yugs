@@ -322,6 +322,28 @@ async function surrender() {
 }
 
 /** The player shown at the bottom of the screen (you, in online duels). */
+/** Column of a field zone as you see it, 0 = left (the opponent's zones are mirrored, they face you). */
+function screenColumn(card) {
+  if (!card || (card.location !== LOC.MZONE && card.location !== LOC.SZONE) || card.sequence > 4) return null;
+  return card.controller === me() ? card.sequence : 4 - card.sequence;
+}
+/** ", 2nd from your left" / ", Field Zone" for choices on the field. */
+function zonePosition(card) {
+  if (card.location === LOC.SZONE && card.sequence === 5) return ' (Field Zone)';
+  if (card.location === LOC.MZONE && card.sequence > 4) return ' (Extra Monster Zone)';
+  const col = screenColumn(card);
+  if (col === null) return '';
+  return ` · ${['1st', '2nd', '3rd', '4th', '5th'][col]} from your left`;
+}
+/** Sort key: board rows top to bottom (opponent's Spell/Trap, their monsters, yours, your Spell/Trap), then left to right. */
+function boardOrder(card) {
+  if (!card) return 1e6;
+  const mine = card.controller === me();
+  const row = card.location === LOC.SZONE ? (mine ? 3 : 0) : card.location === LOC.MZONE ? (mine ? 2 : 1) : 4;
+  const col = screenColumn(card);
+  return row * 100 + (col === null ? 50 + card.sequence : col);
+}
+
 function me() {
   return view && view.viewer !== null && view.viewer !== undefined ? view.viewer : 0;
 }
@@ -787,15 +809,24 @@ function renderModal() {
     counter.textContent = d.min === d.max ? `Selected ${multiSelected.size} of ${d.min}` : `Selected ${multiSelected.size} (choose ${d.min}-${d.max})`;
     confirmBtn.disabled = multiSelected.size < d.min || multiSelected.size > d.max;
   };
-  for (const c of d.choices) {
+  // Show field cards in the same left-to-right order as on the board (the opponent's side faces you,
+  // so their first zone is on your right), each with its position, and light it up on the board on hover.
+  const shown = [...d.choices].sort((a, b) => boardOrder(a.card) - boardOrder(b.card));
+  for (const c of shown) {
     const tile = el('div', 'tile');
     const card = c.card ? { code: c.card.code, faceDown: !c.card.code, defense: false } : { code: 0, faceDown: true };
     const ce = cardEl(card, { allowRotate: false });
     if (multiSelected.has(c.id)) ce.classList.add('selected');
     tile.appendChild(ce);
-    const where = c.card ? `${c.card.controller === d.player ? 'Your' : "Opponent's"} ${LOC_NAME[c.card.location] || ''}` : '';
+    const where = c.card ? `${c.card.controller === me() ? 'Your' : "Opponent's"} ${LOC_NAME[c.card.location] || ''}${zonePosition(c.card)}` : '';
     tile.appendChild(el('div', 'where', [where, c.detail].filter(Boolean).join(' · ')));
-    tile.addEventListener('mouseenter', () => c.card && c.card.code && showDetail(c.card.code));
+    const onBoard = () => (c.card ? cardAt(c.card) : null);
+    tile.addEventListener('mouseenter', () => {
+      if (c.card && c.card.code) showDetail(c.card.code);
+      const b = onBoard();
+      if (b) b.classList.add('target-hover');
+    });
+    tile.addEventListener('mouseleave', () => { const b = onBoard(); if (b) b.classList.remove('target-hover'); });
     tile.addEventListener('click', () => {
       if (multiSelected.has(c.id)) multiSelected.delete(c.id);
       else {
@@ -803,7 +834,7 @@ function renderModal() {
         if (multiSelected.size < d.max) multiSelected.add(c.id);
       }
       ce.classList.toggle('selected', multiSelected.has(c.id));
-      body.querySelectorAll('.tile').forEach((t, i) => t.firstChild.classList.toggle('selected', multiSelected.has(d.choices[i].id)));
+      body.querySelectorAll('.tile').forEach((t, i) => t.firstChild.classList.toggle('selected', multiSelected.has(shown[i].id)));
       refresh();
     });
     body.appendChild(tile);
@@ -1407,6 +1438,7 @@ function copyRow(text) {
 }
 
 function render() {
+  if (!view) { const arrow = document.getElementById('attack-arrow'); if (arrow) arrow.remove(); }
   snapshotBoard();
   renderLobby();
   $('btn-surrender').classList.toggle('hidden', !view || view.winner !== null);
@@ -1436,8 +1468,48 @@ function render() {
   renderReveal();
   renderWinner();
   animateLp();
+  drawAttackArrow();
   runFx();
 }
+
+/** EDOPro-style attack indicator: a red arrow from the attacker to its target (or to the player for a direct attack). */
+function drawAttackArrow() {
+  const old = document.getElementById('attack-arrow');
+  if (old) old.remove();
+  document.querySelectorAll('.card.attack-target, .card.attacking').forEach((n) => n.classList.remove('attack-target', 'attacking'));
+  const a = view && view.attack;
+  if (!a) return;
+  const fromCard = cardAt(a.from);
+  if (!fromCard) return;
+  let toNode = a.to ? cardAt(a.to) : null;
+  if (!a.to) {
+    // Direct attack: aim at the defending player's name / LP bar.
+    const defender = 1 - a.from.controller;
+    const side = $(defender === me() ? 'side-0' : 'side-1');
+    toNode = side ? side.querySelector('.playerbar') : null;
+  }
+  if (!toNode) return;
+  fromCard.classList.add('attacking');
+  if (a.to) toNode.classList.add('attack-target');
+  const f = fromCard.getBoundingClientRect();
+  const t = toNode.getBoundingClientRect();
+  const x1 = f.left + f.width / 2, y1 = f.top + f.height / 2;
+  let x2 = t.left + t.width / 2, y2 = t.top + t.height / 2;
+  // Stop the arrow at the edge of the target instead of its centre.
+  const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+  const back = Math.min(len / 3, a.to ? t.height / 2 : 14);
+  x2 -= ((x2 - x1) / len) * back;
+  y2 -= ((y2 - y1) / len) * back;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.id = 'attack-arrow';
+  svg.setAttribute('class', 'attack-arrow');
+  svg.innerHTML = `<defs><marker id="attack-head" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ff4d4d"/></marker></defs>
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ff4d4d" stroke-width="5" stroke-linecap="round" marker-end="url(#attack-head)" class="attack-line"/>`;
+  document.body.appendChild(svg);
+}
+window.addEventListener('resize', () => { if (view) drawAttackArrow(); });
 
 // ------------------------------------------------------------------ start
 

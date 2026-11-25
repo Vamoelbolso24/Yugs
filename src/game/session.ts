@@ -120,6 +120,8 @@ export class DuelSession {
   private events: GameEvent[] = [];
   private nextEventId = 1;
   endReason: string | null = null;
+  /** The attack in progress (shown as an arrow until the battle is over). */
+  private attack: { from: { controller: 0 | 1; location: number; sequence: number }; to: { controller: 0 | 1; location: number; sequence: number } | null } | null = null;
 
   /** Frees the duel engine's memory. Only call it once nobody can reach this duel any more. */
   dispose(): void {
@@ -277,6 +279,20 @@ export class DuelSession {
       case OcgMessageType.MOVE:
         this.trackMove(msg);
         break;
+      case OcgMessageType.ATTACK: {
+        const place = (c: { controller: number; location: number; sequence: number }) => ({ controller: c.controller as 0 | 1, location: c.location, sequence: c.sequence });
+        this.attack = { from: place(msg.card), to: msg.target ? place(msg.target) : null };
+        const attacker = this.monsterLabel(msg.card);
+        const target = msg.target ? this.monsterLabel(msg.target) : null;
+        this.log.push({ text: target ? `  ${attacker} attacks ${target}` : `  ${attacker} attacks ${this.names[1 - msg.card.controller]} directly` });
+        break;
+      }
+      case OcgMessageType.ATTACK_DISABLED:
+      case OcgMessageType.DAMAGE_STEP_END:
+      case OcgMessageType.NEW_PHASE:
+      case OcgMessageType.NEW_TURN:
+        this.attack = null;
+        break;
       case OcgMessageType.DRAW:
         // Draws fly face-down from the Deck to the hand (the cards themselves stay secret).
         for (let i = 0; i < msg.drawn.length; i++) {
@@ -318,9 +334,21 @@ export class DuelSession {
         break;
     }
     this.trackReveal(msg);
-    const line = describeMessage(msg, this.cards, this.names);
+    const line = msg.type === OcgMessageType.ATTACK ? null : describeMessage(msg, this.cards, this.names);
     if (line) this.log.push({ text: line });
     if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
+  }
+
+  /** "Kaiba's Blue-Eyes White Dragon", or "Yugi's face-down monster". */
+  private monsterLabel(pos: { controller: number; location: number; sequence: number }): string {
+    const owner = this.names[pos.controller] ?? 'A player';
+    try {
+      const card = this.duel.queryLocation(pos.controller as 0 | 1, pos.location as OcgLocation, QUERY_FLAGS)[pos.sequence];
+      if (card && card.code && card.position !== undefined && (card.position & (OcgPosition.FACEUP_ATTACK | OcgPosition.FACEUP_DEFENSE))) {
+        return `${owner}'s ${this.cards.name(card.code)}`;
+      }
+    } catch { /* fall back below */ }
+    return `${owner}'s face-down monster`;
   }
 
   private addEvent(e: Omit<GameEvent, 'id'> & Record<string, unknown>): void {
@@ -407,6 +435,7 @@ export class DuelSession {
       case OcgMessageType.SELECT_BATTLECMD:
         // A normal move is starting: the "something just happened" window is over.
         this.responseWindow = false;
+        this.attack = null;
         return null;
       case OcgMessageType.SELECT_CHAIN: {
         const pass: OcgResponse = { type: OcgResponseType.SELECT_CHAIN, index: null };
@@ -708,6 +737,7 @@ export class DuelSession {
       reveals: visibleReveals,
       winner: this.winner,
       endReason: this.winner === null ? null : this.endReason,
+      attack: this.winner === null ? this.attack : null,
       events: recentEvents,
       cards,
     };
