@@ -75,7 +75,7 @@ async function loadSiteStatus() {
 }
 
 /** Community Discord: where players meet to set up duels while the ladder is small. */
-const DISCORD_URL = 'https://discord.gg/yZAxvH4Sw';
+const DISCORD_URL = 'https://discord.gg/29VUMB3BCY';
 function discordBox() {
   const box = el('div', 'discord-box');
   const text = el('div', 'discord-text');
