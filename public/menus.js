@@ -912,7 +912,7 @@ function renderCpuSetup(box) {
   if (!usable.length) { box.appendChild(el('p', 'error', 'You need at least one finished deck.')); return; }
   if (cpuSetup.ydks === null) { loadCpuDecks(); box.appendChild(el('p', 'muted', 'Loading decks...')); return; }
   const ydkIds = cpuSetup.ydks.map((d) => `ydk:${d.id}`);
-  if (!usable.some((d) => d.id === cpuSetup.deckId)) cpuSetup.deckId = (usable.find((d) => d.active) || usable[0]).id;
+  if (!usable.some((d) => d.id === cpuSetup.deckId) && !ydkIds.includes(cpuSetup.deckId)) cpuSetup.deckId = (usable.find((d) => d.active) || usable[0]).id;
   if (!usable.some((d) => d.id === cpuSetup.cpuDeckId) && !ydkIds.includes(cpuSetup.cpuDeckId)) cpuSetup.cpuDeckId = usable[0].id;
   const pick = (label, key, withYdk) => {
     const wrap = el('label', 'field-label', label);
@@ -927,7 +927,7 @@ function renderCpuSetup(box) {
     }
     if (withYdk && cpuSetup.ydks.length) {
       const g2 = el('optgroup');
-      g2.label = 'CPU decks (.ydk files)';
+      g2.label = '.ydk decks (local-ai\\decks)';
       for (const d of cpuSetup.ydks) {
         const o = el('option', '', `${d.name} (${d.main}${d.extra ? ` + ${d.extra} Extra` : ''})`);
         o.value = `ydk:${d.id}`;
@@ -940,7 +940,7 @@ function renderCpuSetup(box) {
     wrap.appendChild(sel);
     return wrap;
   };
-  box.append(pick('Your deck', 'deckId', false), pick("The CPU's deck", 'cpuDeckId', true));
+  box.append(pick('Your deck', 'deckId', true), pick("The CPU's deck", 'cpuDeckId', true));
 
   // .ydk decks for the CPU: upload, or drop files in the folder
   const ydkBox = el('div', 'cpu-ydks');
@@ -950,8 +950,8 @@ function renderCpuSetup(box) {
   file.multiple = true;
   file.style.display = 'none';
   file.addEventListener('change', () => { uploadCpuYdks(file.files); file.value = ''; });
-  ydkBox.append(file, button('Upload .ydk decks for the CPU', () => file.click(), 'secondary'));
-  ydkBox.appendChild(el('p', 'muted small', `They are saved in ${cpuSetup.folder || 'local-ai\\decks'} (you can also copy .ydk files there yourself, then come back to this screen). The CPU may use any card in them: no collection or banlist limits.`));
+  ydkBox.append(file, button('Upload .ydk decks', () => file.click(), 'secondary'));
+  ydkBox.appendChild(el('p', 'muted small', `They are saved in ${cpuSetup.folder || 'local-ai\\decks'} (you can also copy .ydk files there yourself, then come back to this screen). You and the CPU can both use them, with any card: no collection or banlist limits.`));
   if (cpuSetup.note) ydkBox.appendChild(el('p', 'notice small', cpuSetup.note));
   if (cpuSetup.ydks.length) {
     const ul = el('ul', 'cpu-ydk-list small');

@@ -457,9 +457,13 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
     if (body.mode === 'cpu' && localCpu) {
       if (!user) return sendJson(res, 401, { error: 'Log in first.' });
       const all = players.decks(user.id);
-      const mine = all.find((d) => d.id === body.deckId);
+      // Either side may use a saved deck or a .ydk file from local-ai/decks ("ydk:<file name>").
+      const fromYdk = (id: unknown) => (typeof id === 'string' && id.startsWith('ydk:') ? cpuDecks().find((d) => d.id === id.slice(4)) ?? null : null);
+      const myYdk = fromYdk(body.deckId);
+      if (myYdk && myYdk.main.length < 1) return sendJson(res, 400, { error: `${myYdk.name}.ydk has no Main Deck cards the game knows.` });
+      const mine = myYdk ? { main: myYdk.main, extra: myYdk.extra, name: myYdk.name } : all.find((d) => d.id === body.deckId);
       // The CPU's deck: one of your saved decks, or a .ydk file from local-ai/decks ("ydk:<file name>").
-      const ydk = typeof body.cpuDeckId === 'string' && body.cpuDeckId.startsWith('ydk:') ? cpuDecks().find((d) => d.id === body.cpuDeckId.slice(4)) : null;
+      const ydk = fromYdk(body.cpuDeckId);
       if (ydk && ydk.main.length < 1) return sendJson(res, 400, { error: `${ydk.name}.ydk has no Main Deck cards the game knows.` });
       const theirs = ydk ? { main: ydk.main, extra: ydk.extra, name: ydk.name } : all.find((d) => d.id === body.cpuDeckId);
       if (!mine || !theirs) return sendJson(res, 400, { error: 'Pick your deck and the CPU\'s deck.' });
