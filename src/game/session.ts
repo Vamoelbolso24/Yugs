@@ -123,6 +123,16 @@ export class DuelSession {
   /** The attack in progress (shown as an arrow until the battle is over). */
   private attack: { from: { controller: 0 | 1; location: number; sequence: number }; to: { controller: 0 | 1; location: number; sequence: number } | null } | null = null;
 
+  /** A separate copy of the engine at this exact moment (for an AI to try moves out). Call dispose... destroy() on it after. */
+  copyEngine(): Promise<LocalDuel> {
+    return this.duel.copy(this.cards, CARD_SCRIPTS_DIR);
+  }
+
+  /** The real engine, read-only use (an AI reads the history from it). */
+  get engine(): LocalDuel {
+    return this.duel;
+  }
+
   /** Frees the duel engine's memory. Only call it once nobody can reach this duel any more. */
   dispose(): void {
     if (this.disposed) return;
@@ -159,6 +169,21 @@ export class DuelSession {
     const problem = validatePicks(pending.view, picks) ?? (picks && pending.check ? pending.check(picks) : null);
     if (problem) return { ok: false, error: problem };
     const response = pending.toResponse(picks);
+    this.pending = null;
+    this.lastWasAuto = false;
+    this.duel.respond(response);
+    this.run();
+    return { ok: true };
+  }
+
+  /** For a computer player: the raw engine question it must answer now (null if it's not this player's turn to decide). */
+  questionFor(player: 0 | 1): OcgMessage | null {
+    return this.pending && this.pending.view.player === player && this.winner === null ? this.pending.msg : null;
+  }
+
+  /** For a computer player: answer the current question with a raw engine response. */
+  answerRaw(player: 0 | 1, response: OcgResponse): { ok: true } | { ok: false; error: string } {
+    if (!this.pending || this.pending.view.player !== player) return { ok: false, error: 'Not this player\'s decision.' };
     this.pending = null;
     this.lastWasAuto = false;
     this.duel.respond(response);

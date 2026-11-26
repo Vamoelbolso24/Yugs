@@ -6,3 +6,5 @@ data/
 config.local.json
 content/custom/pics/
 content/branding/
+local-ai/
+play-vs-cpu.bat

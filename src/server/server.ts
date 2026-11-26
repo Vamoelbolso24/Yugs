@@ -2,6 +2,8 @@
 // Start with:  npm start   (then open http://localhost:3000)
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { networkInterfaces } from 'node:os';
 import { CardDatabase } from '../engine/cardDb.ts';
@@ -25,6 +27,7 @@ import { createPlayerApi } from './playerApi.ts';
 import { CUSTOM_PICS_DIR, customScriptReader } from '../content/customCards.ts';
 import { setCustomScriptReader } from '../engine/scriptReader.ts';
 import { CARD_DB_FILES, ROOT } from '../paths.ts';
+import type { DeckCodes } from '../decks/starters.ts';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -45,7 +48,44 @@ console.log('Loading card database...');
 const cards = new CardDatabase(CARD_DB_FILES);
 console.log(`Loaded ${cards.cards.size} cards.`);
 /** Local duels (practice, vs bot, admin test). viewer 'all' = one person plays both sides. */
-const sessions = new Map<string, { session: DuelSession; ownerId: number | null; owner: string; viewer: 0 | 1 | 'all'; lastUsed: number }>();
+type CpuStyle = 'normal' | 'defensive' | 'aggro';
+interface CpuSeat { player: 0 | 1; style: CpuStyle; busy: boolean }
+const sessions = new Map<string, { session: DuelSession; ownerId: number | null; owner: string; viewer: 0 | 1 | 'all'; lastUsed: number; cpu?: CpuSeat }>();
+
+// The CPU opponent exists only on your own PC: it lives in the git-ignored local-ai folder and is only loaded
+// when the server is started with play-vs-cpu.bat (YUGS_LOCAL_AI=1). The public server never has it.
+interface LocalCpu { decide(args: { session: DuelSession; player: 0 | 1; style: CpuStyle; cards: CardDatabase }): Promise<import('ocgcore-wasm').OcgResponse> }
+let localCpu: LocalCpu | null = null;
+if (process.env.YUGS_LOCAL_AI === '1') {
+  const file = path.join(ROOT, 'local-ai', 'cpu.ts');
+  if (existsSync(file)) {
+    localCpu = (await import(pathToFileURL(file).href)) as LocalCpu;
+    console.log('CPU opponent is ON (local-ai folder). "Duel vs CPU" is on the main menu.');
+  } else console.log('YUGS_LOCAL_AI is set but local-ai/cpu.ts is missing.');
+}
+
+/** Lets the CPU answer every question that is its turn, one after another (it thinks in the background). */
+async function runCpu(id: string): Promise<void> {
+  const entry = sessions.get(id);
+  if (!entry || !entry.cpu || entry.cpu.busy || !localCpu) return;
+  const { session, cpu } = entry;
+  cpu.busy = true;
+  try {
+    while (sessions.has(id) && session.winner === null && session.questionFor(cpu.player)) {
+      let response;
+      try {
+        response = await localCpu.decide({ session, player: cpu.player, style: cpu.style, cards });
+      } catch (e) {
+        console.error('The CPU had a problem deciding:', e);
+        break;
+      }
+      const r = session.answerRaw(cpu.player, response);
+      if (!r.ok) { console.error('The CPU answer was refused:', r.error); break; }
+    }
+  } finally {
+    cpu.busy = false;
+  }
+}
 /** Each account (or, logged out, each internet address) keeps at most this many practice/bot duels; starting another drops the oldest. */
 const LOCAL_DUELS_EACH = 2;
 /** All local duels together, so the server's memory can't fill up. */
@@ -333,7 +373,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
   // Same-Wi-Fi links are only for playing at home; behind the public HTTPS address they would not work.
   if (req.method === 'GET' && parts[0] === 'info') {
     const publicServer = !!req.headers['x-forwarded-proto'] || process.env.HOST === '127.0.0.1';
-    return sendJson(res, 200, { lanUrls: publicServer ? [] : lanUrls() });
+    return sendJson(res, 200, { lanUrls: publicServer ? [] : lanUrls(), cpu: !!localCpu && !publicServer });
   }
 
   // POST /api/duel  { mode: 'test', ... }  -> start a local duel
@@ -356,6 +396,25 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
       });
       addLocalDuel(session, user.id, `u:${user.id}`, 'all');
       return sendJson(res, 200, session.view());
+    }
+    // Duel vs CPU (only on your own PC, see localCpu): { deckId: your deck, cpuDeckId: the CPU's deck, style }
+    if (body.mode === 'cpu' && localCpu) {
+      if (!user) return sendJson(res, 401, { error: 'Log in first.' });
+      const all = players.decks(user.id);
+      const mine = all.find((d) => d.id === body.deckId);
+      const theirs = all.find((d) => d.id === body.cpuDeckId);
+      if (!mine || !theirs) return sendJson(res, 400, { error: 'Pick your deck and the CPU\'s deck.' });
+      const style: CpuStyle = body.style === 'defensive' || body.style === 'aggro' ? body.style : 'normal';
+      const label = { normal: 'Normal', defensive: 'Defensive', aggro: 'Aggro' }[style];
+      const human: 0 | 1 = Math.random() < 0.5 ? 0 : 1; // coin toss: who goes first
+      const decks: [DeckCodes, DeckCodes] = human === 0 ? [mine, theirs] : [theirs, mine];
+      const names: [string, string] = human === 0 ? [user.username, `CPU (${label})`] : [`CPU (${label})`, user.username];
+      const session = await DuelSession.start(cards, { decks, names, seed });
+      session.setChainMode((1 - human) as 0 | 1, 'always'); // the CPU decides every response itself
+      addLocalDuel(session, user.id, `u:${user.id}`, human);
+      sessions.get(session.id)!.cpu = { player: (1 - human) as 0 | 1, style, busy: false };
+      void runCpu(session.id);
+      return sendJson(res, 200, session.view(human));
     }
     // Practice (hotseat) and vs-bot duels were removed for the public game; a better bot may come back later.
     return sendJson(res, 404, { error: 'Practice and bot duels are not available. Find a duel or invite a friend.' });
@@ -380,6 +439,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
     if (picks === undefined || typeof body.decisionId !== 'number') return sendJson(res, 400, { error: 'Bad answer format.' });
     const result = session.answer(body.decisionId, picks, viewer === 'all' ? undefined : viewer);
     if (!result.ok) return sendJson(res, 409, { error: result.error, view: show() });
+    if (entry.cpu) void runCpu(parts[1]!);
     return sendJson(res, 200, show());
   }
 

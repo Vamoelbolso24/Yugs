@@ -10,8 +10,12 @@ export function setCustomScriptReader(reader: (name: string) => string | null): 
   customReader = reader;
 }
 
+/** Script files read so far, shared by every duel (they don't change while the server runs). */
+const sharedCaches = new Map<string, Map<string, string | null>>();
+
 export function createScriptReader(root: string): (name: string) => string | null {
-  const cache = new Map<string, string | null>();
+  let cache = sharedCaches.get(root);
+  if (!cache) sharedCaches.set(root, (cache = new Map()));
   return (name: string) => {
     const cached = cache.get(name);
     if (cached !== undefined) return cached;

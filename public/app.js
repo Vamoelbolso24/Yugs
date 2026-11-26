@@ -294,6 +294,25 @@ async function answer(picks) {
   }
   busy = false;
   render();
+  waitForCpu();
+}
+
+/** Duel vs CPU (your own PC only): while the CPU is thinking, check back every half second for its moves. */
+let cpuAvailable = false;
+let cpuPoll = null;
+function waitForCpu() {
+  clearTimeout(cpuPoll);
+  if (mode !== 'practice' || !view || view.viewer === null || view.viewer === undefined || view.winner !== null) return;
+  if (view.waitingFor === null || view.waitingFor === view.viewer) return;
+  const id = view.id;
+  cpuPoll = setTimeout(async () => {
+    if (!view || view.id !== id || mode !== 'practice') return;
+    try {
+      const { ok, data } = await api('GET', `/api/duel/${id}`);
+      if (ok && view && view.id === id) { view = data; render(); }
+    } catch { /* try again */ }
+    waitForCpu();
+  }, 500);
 }
 
 async function setChainMode(player, chainMode) {
@@ -700,7 +719,8 @@ function renderPrompt() {
     }
   } else if (view.waitingFor !== null && view.waitingFor !== undefined) {
     const line = el('div', 'waiting');
-    line.append(document.createTextNode('Waiting for '), whoLabel(view.waitingFor), document.createTextNode('...'));
+    if (/^CPU \(/.test(view.players[view.waitingFor].name)) line.append(whoLabel(view.waitingFor), document.createTextNode(' is thinking...'));
+    else line.append(document.createTextNode('Waiting for '), whoLabel(view.waitingFor), document.createTextNode('...'));
     box.appendChild(line);
   } else box.appendChild(el('div', '', busy ? 'Thinking...' : ''));
   if (mode === 'online' && online && !online.connected) box.appendChild(el('div', 'error', 'Connection lost. Reconnecting...'));
@@ -1527,7 +1547,11 @@ $('btn-report').addEventListener('click', () => openBugReport());
 
 (async function init() {
   await initCardImages();
-  api('GET', '/api/info').then(({ ok, data }) => { if (ok) lanUrls = data.lanUrls || []; }).catch(() => {});
+  api('GET', '/api/info').then(({ ok, data }) => {
+    if (!ok) return;
+    lanUrls = data.lanUrls || [];
+    if (data.cpu) { cpuAvailable = true; render(); }
+  }).catch(() => {});
   await Promise.all([loadUser(), loadSiteStatus()]);
   setInterval(loadSiteStatus, 60_000);
   const room = new URLSearchParams(location.search).get('room');

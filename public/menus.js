@@ -86,7 +86,7 @@ function button(label, onClick, cls = '') {
 
 function renderMenus(box) {
   const lobbyBox = $('lobby-box');
-  lobbyBox.classList.toggle('wide', !!(profile && profile.starterChosen && ['packs', 'decks', 'test', 'packmaker', 'banlist', 'standings', 'tutorial', 'reports', 'players', 'maintenance'].includes(screen)));
+  lobbyBox.classList.toggle('wide', !!(profile && profile.starterChosen && ['packs', 'decks', 'test', 'packmaker', 'banlist', 'standings', 'tutorial', 'reports', 'players', 'maintenance', 'cpu'].includes(screen)));
   if (siteStatus.maintenance && !currentUser.isAdmin) return renderMaintenanceWait(box);
   if (screen === 'maintenance' && currentUser.isAdmin) return renderMaintenanceAdmin(box);
   if (!profile) {
@@ -103,6 +103,7 @@ function renderMenus(box) {
   if (screen === 'tutorial') return renderTutorial(box);
   if (screen === 'reports' && currentUser.isAdmin) return renderReports(box);
   if (screen === 'players' && currentUser.isAdmin) return renderPlayers(box);
+  if (screen === 'cpu' && cpuAvailable) return renderCpuSetup(box);
   if (screen === 'test' && currentUser.isAdmin) return renderTestSetup(box);
   if (screen === 'packmaker' && currentUser.isAdmin) return renderPackMaker(box);
   if (screen === 'banlist' && currentUser.isAdmin) return renderBanlistEditor(box);
@@ -132,6 +133,7 @@ function renderHome(box) {
   grid.append(
     button('Find a duel (ranked)', () => { screen = 'matching'; matchState = null; menuMessage = ''; findDuel(); render(); }),
     button('Duel a friend (invite link)', createOnline, 'secondary'),
+    ...(cpuAvailable ? [button('Duel vs CPU (this PC only)', () => { screen = 'cpu'; lobbyError = ''; render(); }, 'secondary')] : []),
     button('Deck editor', () => { screen = 'decks'; menuMessage = ''; render(); }, 'secondary'),
     button(profile.freePacks > 0 ? 'Open packs' : 'Packs', () => { screen = 'packs'; menuMessage = ''; render(); }, 'secondary'),
     button('Standings', () => { screen = 'standings'; standings = null; menuMessage = ''; render(); }, 'secondary'),
@@ -859,6 +861,53 @@ async function startLocalDuel(body) {
   view = data;
   localStorage.setItem('yugs-duel', view.id);
   render();
+  waitForCpu();
+}
+
+// ------------------------------------------------------------------ duel vs CPU (only on your own PC, with play-vs-cpu.bat)
+
+let cpuSetup = { deckId: null, cpuDeckId: null, style: 'normal' };
+const CPU_STYLES = [
+  ['normal', 'Normal', 'Balanced: life points, cards and board all matter.'],
+  ['defensive', 'Defensive', 'Protects its life points: sets monsters, holds traps, trades only when clearly ahead.'],
+  ['aggro', 'Aggro', 'Goes for damage: attacks whenever it pays off and clears the way for direct attacks.'],
+];
+
+function renderCpuSetup(box) {
+  const top = el('div', 'screen-top');
+  top.append(el('h2', '', 'Duel vs CPU'), button('Back', () => { screen = 'home'; lobbyError = ''; render(); }, 'secondary'));
+  box.appendChild(top);
+  box.appendChild(el('p', 'muted small', 'Only on your PC: this CPU never runs on the public server. Duels against it give no coins or ELO.'));
+  if (!need('decks')) { box.appendChild(el('p', 'muted', 'Loading decks...')); return; }
+  const usable = cache.decks.filter((d) => !d.problems.length);
+  if (!usable.length) { box.appendChild(el('p', 'error', 'You need at least one finished deck.')); return; }
+  if (!usable.some((d) => d.id === cpuSetup.deckId)) cpuSetup.deckId = (usable.find((d) => d.active) || usable[0]).id;
+  if (!usable.some((d) => d.id === cpuSetup.cpuDeckId)) cpuSetup.cpuDeckId = usable[0].id;
+  const pick = (label, key) => {
+    const wrap = el('label', 'field-label', label);
+    const sel = el('select', 'text-input');
+    for (const d of usable) {
+      const o = el('option', '', `${d.name}${d.testOnly && d.testOnly.length ? ' (test only)' : ''}`);
+      o.value = String(d.id);
+      if (d.id === cpuSetup[key]) o.selected = true;
+      sel.appendChild(o);
+    }
+    sel.addEventListener('change', () => { cpuSetup[key] = Number(sel.value); });
+    wrap.appendChild(sel);
+    return wrap;
+  };
+  box.append(pick('Your deck', 'deckId'), pick("The CPU's deck", 'cpuDeckId'));
+  box.appendChild(el('div', 'field-label', 'CPU style'));
+  const styles = el('div', 'cpu-styles');
+  for (const [value, label, text] of CPU_STYLES) {
+    const b = el('button', cpuSetup.style === value ? 'cpu-style active' : 'cpu-style');
+    b.append(el('b', '', label), el('span', 'muted small', text));
+    b.addEventListener('click', () => { cpuSetup.style = value; render(); });
+    styles.appendChild(b);
+  }
+  box.appendChild(styles);
+  if (lobbyError) box.appendChild(el('div', 'error', lobbyError));
+  box.appendChild(button('Start duel', () => startLocalDuel({ mode: 'cpu', deckId: cpuSetup.deckId, cpuDeckId: cpuSetup.cpuDeckId, style: cpuSetup.style })));
 }
 
 // ------------------------------------------------------------------ admin: test duel + all cards

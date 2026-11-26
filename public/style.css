@@ -563,3 +563,9 @@ button.danger { background: #c0392b; color: #fff; }
 @keyframes attack-target { 50% { box-shadow: 0 0 0 3px #ff4d4d, 0 0 22px 4px rgba(255, 77, 77, .85); } }
 /* A choice in the target list being hovered: light up that card on the board */
 .card.target-hover { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 20px rgba(var(--accent-rgb), .9); }
+
+/* Duel vs CPU setup (local only) */
+.cpu-styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.cpu-style { display: flex; flex-direction: column; gap: 4px; text-align: left; background: var(--panel-2); color: inherit; border: 1px solid var(--line); font-weight: 400; }
+.cpu-style.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+@media (max-width: 760px) { .cpu-styles { grid-template-columns: 1fr; } }

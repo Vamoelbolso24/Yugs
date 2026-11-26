@@ -42,11 +42,30 @@ export class LocalDuel {
   readonly errors: string[];
   private readonly lib: OcgCoreSync;
   private readonly handle: OcgDuelHandle;
+  /** Every answer given to the engine so far, in order. Seed + setup + these answers = this exact duel again. */
+  readonly history: OcgResponse[] = [];
+  /** How the duel was set up (to make copies of it). */
+  setup!: DuelSetup;
   private constructor(lib: OcgCoreSync, handle: OcgDuelHandle, seed: number, errors: string[]) {
     this.lib = lib;
     this.handle = handle;
     this.seed = seed;
     this.errors = errors;
+  }
+
+  /**
+   * A separate, identical copy of this duel (same seed, decks and answers), for trying moves out
+   * without touching the real duel. The copy is at the same decision point as this duel.
+   */
+  async copy(cards: CardDatabase, scriptRoot: string, upTo = this.history.length): Promise<LocalDuel> {
+    const twin = await LocalDuel.create(cards, scriptRoot, { ...this.setup, seed: this.seed });
+    let i = 0;
+    for (;;) {
+      const { status } = twin.advance();
+      if (status === OcgProcessResult.END || i >= upTo) break;
+      twin.respond(this.history[i++]!);
+    }
+    return twin;
   }
 
   static async create(cards: CardDatabase, scriptRoot: string, setup: DuelSetup): Promise<LocalDuel> {
@@ -87,6 +106,7 @@ export class LocalDuel {
     }
 
     const duel = new LocalDuel(lib, handle, seed, errors);
+    duel.setup = { ...setup, seed };
     ([0, 1] as const).forEach((player) => {
       const deck = setup.decks[player];
       const add = (code: number, location: OcgLocation) => {
@@ -142,6 +162,7 @@ export class LocalDuel {
   }
 
   respond(response: OcgResponse): void {
+    this.history.push(response);
     this.lib.duelSetResponse(this.handle, response);
   }
 
