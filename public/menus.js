@@ -532,6 +532,7 @@ function renderDeckEditor(box) {
   nameInput.addEventListener('input', () => { ed.name = nameInput.value; ed.dirty = true; });
   top.append(select, nameInput, button(ed.dirty ? 'Save *' : 'Save', saveDeck));
   if (!(current && current.active)) top.append(button('Make active', activateDeck, 'secondary'));
+  if (ed.main.length || ed.extra.length) top.append(button('Copy', copyDeck, 'secondary'));
   if (current && !current.active) top.append(button('Delete', deleteDeck, 'ghost'));
   top.append(button('Back', () => { if (confirmDiscard()) { editor = null; screen = 'home'; render(); } }, 'secondary'));
   box.appendChild(top);
@@ -758,6 +759,22 @@ async function saveDeck() {
       : ed.testOnly.length ? 'Saved. This deck works in Test duels only.' : 'Saved. This deck is ready to duel.';
     await fetchData('decks');
   }
+  render();
+}
+
+/** Saves what's in the editor as a new deck "<name> (copy)" and opens it; the original deck is not changed. */
+async function copyDeck() {
+  const ed = editor;
+  const hadChanges = ed.dirty && ed.deckId !== null;
+  const stem = (ed.name || 'Deck').replace(/ \(copy( \d+)?\)$/, '').slice(0, 40);
+  const taken = new Set((cache.decks || []).map((d) => d.name.toLowerCase()));
+  let name = `${stem} (copy)`;
+  for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${stem} (copy ${i})`;
+  const { ok, data } = await api('POST', '/api/decks', { name, main: ed.main, extra: ed.extra });
+  if (!ok) { ed.message = data.error; render(); return; }
+  await fetchData('decks');
+  openDeckInEditor(cache.decks.find((d) => d.id === data.deck.id) || data.deck);
+  editor.message = `Copied: you're now editing "${name}".${hadChanges ? ' Your unsaved changes went into the copy; the original stays as it was last saved.' : ' The original is unchanged.'}`;
   render();
 }
 
