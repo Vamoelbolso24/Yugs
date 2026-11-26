@@ -866,7 +866,36 @@ async function startLocalDuel(body) {
 
 // ------------------------------------------------------------------ duel vs CPU (only on your own PC, with play-vs-cpu.bat)
 
-let cpuSetup = { deckId: null, cpuDeckId: null, style: 'normal' };
+let cpuSetup = { deckId: null, cpuDeckId: null, style: 'normal', ydks: null, folder: '', note: '' };
+
+async function loadCpuDecks() {
+  const { ok, data } = await api('GET', '/api/cpu/decks');
+  cpuSetup.ydks = ok ? data.decks : [];
+  cpuSetup.folder = ok ? data.folder : '';
+  render();
+}
+
+/** Upload .ydk files: they are saved in local-ai/decks for the CPU to use. */
+function uploadCpuYdks(files) {
+  const list = [...files].filter((f) => /\.ydk$/i.test(f.name));
+  if (!list.length) { cpuSetup.note = 'Pick .ydk files.'; render(); return; }
+  let done = 0;
+  const notes = [];
+  for (const file of list) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const { ok, data } = await api('POST', '/api/cpu/decks', { name: file.name, ydk: String(reader.result) });
+      if (!ok) notes.push(`${file.name}: ${data.error}`);
+      else {
+        notes.push(`${data.saved} added${data.unknown ? ` (${data.unknown} card${data.unknown === 1 ? '' : 's'} not in the game were skipped)` : ''}.`);
+        cpuSetup.ydks = data.decks;
+        cpuSetup.cpuDeckId = `ydk:${data.saved}`;
+      }
+      if (++done === list.length) { cpuSetup.note = notes.join(' '); render(); }
+    };
+    reader.readAsText(file);
+  }
+}
 const CPU_STYLES = [
   ['normal', 'Normal', 'Balanced: life points, cards and board all matter.'],
   ['defensive', 'Defensive', 'Protects its life points: sets monsters, holds traps, trades only when clearly ahead.'],
@@ -881,22 +910,64 @@ function renderCpuSetup(box) {
   if (!need('decks')) { box.appendChild(el('p', 'muted', 'Loading decks...')); return; }
   const usable = cache.decks.filter((d) => !d.problems.length);
   if (!usable.length) { box.appendChild(el('p', 'error', 'You need at least one finished deck.')); return; }
+  if (cpuSetup.ydks === null) { loadCpuDecks(); box.appendChild(el('p', 'muted', 'Loading decks...')); return; }
+  const ydkIds = cpuSetup.ydks.map((d) => `ydk:${d.id}`);
   if (!usable.some((d) => d.id === cpuSetup.deckId)) cpuSetup.deckId = (usable.find((d) => d.active) || usable[0]).id;
-  if (!usable.some((d) => d.id === cpuSetup.cpuDeckId)) cpuSetup.cpuDeckId = usable[0].id;
-  const pick = (label, key) => {
+  if (!usable.some((d) => d.id === cpuSetup.cpuDeckId) && !ydkIds.includes(cpuSetup.cpuDeckId)) cpuSetup.cpuDeckId = usable[0].id;
+  const pick = (label, key, withYdk) => {
     const wrap = el('label', 'field-label', label);
     const sel = el('select', 'text-input');
+    const group = withYdk ? el('optgroup') : sel;
+    if (withYdk) { group.label = 'Your saved decks'; sel.appendChild(group); }
     for (const d of usable) {
       const o = el('option', '', `${d.name}${d.testOnly && d.testOnly.length ? ' (test only)' : ''}`);
       o.value = String(d.id);
       if (d.id === cpuSetup[key]) o.selected = true;
-      sel.appendChild(o);
+      group.appendChild(o);
     }
-    sel.addEventListener('change', () => { cpuSetup[key] = Number(sel.value); });
+    if (withYdk && cpuSetup.ydks.length) {
+      const g2 = el('optgroup');
+      g2.label = 'CPU decks (.ydk files)';
+      for (const d of cpuSetup.ydks) {
+        const o = el('option', '', `${d.name} (${d.main}${d.extra ? ` + ${d.extra} Extra` : ''})`);
+        o.value = `ydk:${d.id}`;
+        if (o.value === cpuSetup[key]) o.selected = true;
+        g2.appendChild(o);
+      }
+      sel.appendChild(g2);
+    }
+    sel.addEventListener('change', () => { cpuSetup[key] = sel.value.startsWith('ydk:') ? sel.value : Number(sel.value); });
     wrap.appendChild(sel);
     return wrap;
   };
-  box.append(pick('Your deck', 'deckId'), pick("The CPU's deck", 'cpuDeckId'));
+  box.append(pick('Your deck', 'deckId', false), pick("The CPU's deck", 'cpuDeckId', true));
+
+  // .ydk decks for the CPU: upload, or drop files in the folder
+  const ydkBox = el('div', 'cpu-ydks');
+  const file = el('input');
+  file.type = 'file';
+  file.accept = '.ydk';
+  file.multiple = true;
+  file.style.display = 'none';
+  file.addEventListener('change', () => { uploadCpuYdks(file.files); file.value = ''; });
+  ydkBox.append(file, button('Upload .ydk decks for the CPU', () => file.click(), 'secondary'));
+  ydkBox.appendChild(el('p', 'muted small', `They are saved in ${cpuSetup.folder || 'local-ai\\decks'} (you can also copy .ydk files there yourself, then come back to this screen). The CPU may use any card in them: no collection or banlist limits.`));
+  if (cpuSetup.note) ydkBox.appendChild(el('p', 'notice small', cpuSetup.note));
+  if (cpuSetup.ydks.length) {
+    const ul = el('ul', 'cpu-ydk-list small');
+    for (const d of cpuSetup.ydks) {
+      const li = el('li', '', `${d.name}: ${d.main} Main${d.extra ? `, ${d.extra} Extra` : ''}${d.unknown ? ` (${d.unknown} unknown skipped)` : ''} `);
+      li.appendChild(button('Remove', async () => {
+        if (!confirm(`Delete ${d.id} from the CPU decks folder?`)) return;
+        const { ok, data } = await api('DELETE', `/api/cpu/decks/${encodeURIComponent(d.id)}`);
+        if (ok) { cpuSetup.ydks = data.decks; cpuSetup.note = `${d.id} removed.`; }
+        render();
+      }, 'link-button'));
+      ul.appendChild(li);
+    }
+    ydkBox.appendChild(ul);
+  }
+  box.appendChild(ydkBox);
   box.appendChild(el('div', 'field-label', 'CPU style'));
   const styles = el('div', 'cpu-styles');
   for (const [value, label, text] of CPU_STYLES) {

@@ -569,3 +569,5 @@ button.danger { background: #c0392b; color: #fff; }
 .cpu-style { display: flex; flex-direction: column; gap: 4px; text-align: left; background: var(--panel-2); color: inherit; border: 1px solid var(--line); font-weight: 400; }
 .cpu-style.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 @media (max-width: 760px) { .cpu-styles { grid-template-columns: 1fr; } }
+.cpu-ydks { border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; margin: 6px 0 12px; }
+.cpu-ydk-list { margin: 6px 0 0; padding-left: 18px; }

@@ -2,7 +2,7 @@
 // Start with:  npm start   (then open http://localhost:3000)
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { networkInterfaces } from 'node:os';
@@ -62,6 +62,33 @@ if (process.env.YUGS_LOCAL_AI === '1') {
     localCpu = (await import(pathToFileURL(file).href)) as LocalCpu;
     console.log('CPU opponent is ON (local-ai folder). "Duel vs CPU" is on the main menu.');
   } else console.log('YUGS_LOCAL_AI is set but local-ai/cpu.ts is missing.');
+}
+
+/** Decks only the CPU uses: .ydk files in local-ai/decks (drop them there, or upload them on the Duel vs CPU screen). */
+const CPU_DECKS_DIR = path.join(ROOT, 'local-ai', 'decks');
+interface CpuDeck { id: string; name: string; main: number[]; extra: number[]; unknown: number }
+function parseYdk(text: string): { main: number[]; extra: number[]; unknown: number } {
+  const main: number[] = [], extra: number[] = [];
+  let section: 'main' | 'extra' | 'side' = 'main';
+  let unknown = 0;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line.startsWith('#main')) section = 'main';
+    else if (line.startsWith('#extra')) section = 'extra';
+    else if (line.startsWith('!side')) section = 'side';
+    else if (/^\d+$/.test(line) && section !== 'side') {
+      const code = Number(line);
+      if (!cards.get(code)) { unknown++; continue; }
+      (section === 'extra' || cards.isExtraDeckCard(code) ? extra : main).push(code);
+    }
+  }
+  return { main, extra, unknown };
+}
+function cpuDecks(): CpuDeck[] {
+  if (!existsSync(CPU_DECKS_DIR)) return [];
+  return readdirSync(CPU_DECKS_DIR).filter((f) => /\.ydk$/i.test(f)).sort((a, b) => a.localeCompare(b)).map((f) => ({
+    id: f, name: f.replace(/\.ydk$/i, ''), ...parseYdk(readFileSync(path.join(CPU_DECKS_DIR, f), 'utf-8')),
+  }));
 }
 
 /** Lets the CPU answer every question that is its turn, one after another (it thinks in the background). */
@@ -376,6 +403,35 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
     return sendJson(res, 200, { lanUrls: publicServer ? [] : lanUrls(), cpu: !!localCpu && !publicServer });
   }
 
+  // CPU decks (only on your own PC with the CPU on):
+  //   GET /api/cpu/decks              list the .ydk files in local-ai/decks
+  //   POST /api/cpu/decks {name, ydk} save an uploaded .ydk there
+  //   DELETE /api/cpu/decks/:file     delete one
+  if (parts[0] === 'cpu' && parts[1] === 'decks') {
+    if (!localCpu) return sendJson(res, 404, { error: 'The CPU is not on.' });
+    if (!accounts.userFromRequest(req)) return sendJson(res, 401, { error: 'Log in first.' });
+    const list = () => cpuDecks().map(({ id, name, main, extra, unknown }) => ({ id, name, main: main.length, extra: extra.length, unknown }));
+    if (req.method === 'GET') return sendJson(res, 200, { decks: list(), folder: CPU_DECKS_DIR });
+    if (req.method === 'POST') {
+      const body = await readBody(req, 200_000);
+      const text = String(body.ydk ?? '');
+      const parsed = parseYdk(text);
+      if (!parsed.main.length) return sendJson(res, 400, { error: 'No cards the game knows were found in that file.' });
+      const name = String(body.name ?? 'deck').replace(/\.ydk$/i, '').replace(/[^\w \-().]+/g, '').trim().slice(0, 60) || 'deck';
+      mkdirSync(CPU_DECKS_DIR, { recursive: true });
+      writeFileSync(path.join(CPU_DECKS_DIR, `${name}.ydk`), text);
+      return sendJson(res, 200, { saved: `${name}.ydk`, unknown: parsed.unknown, decks: list() });
+    }
+    if (req.method === 'DELETE' && parts[2]) {
+      const file = decodeURIComponent(parts[2]);
+      if (!/^[\w \-().]+\.ydk$/i.test(file)) return sendJson(res, 400, { error: 'Bad file name.' });
+      const full = path.join(CPU_DECKS_DIR, file);
+      if (existsSync(full)) unlinkSync(full);
+      return sendJson(res, 200, { decks: list() });
+    }
+    return sendJson(res, 404, { error: 'Unknown request.' });
+  }
+
   // POST /api/duel  { mode: 'test', ... }  -> start a local duel
   //   mode 'test': admins only. { deckA, deckB, hand: [card codes] } you play both sides,
   //                deck A starts with the given cards in hand. Ownership is not checked.
@@ -402,7 +458,10 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, parts: strin
       if (!user) return sendJson(res, 401, { error: 'Log in first.' });
       const all = players.decks(user.id);
       const mine = all.find((d) => d.id === body.deckId);
-      const theirs = all.find((d) => d.id === body.cpuDeckId);
+      // The CPU's deck: one of your saved decks, or a .ydk file from local-ai/decks ("ydk:<file name>").
+      const ydk = typeof body.cpuDeckId === 'string' && body.cpuDeckId.startsWith('ydk:') ? cpuDecks().find((d) => d.id === body.cpuDeckId.slice(4)) : null;
+      if (ydk && ydk.main.length < 1) return sendJson(res, 400, { error: `${ydk.name}.ydk has no Main Deck cards the game knows.` });
+      const theirs = ydk ? { main: ydk.main, extra: ydk.extra, name: ydk.name } : all.find((d) => d.id === body.cpuDeckId);
       if (!mine || !theirs) return sendJson(res, 400, { error: 'Pick your deck and the CPU\'s deck.' });
       const style: CpuStyle = body.style === 'defensive' || body.style === 'aggro' ? body.style : 'normal';
       const label = { normal: 'Normal', defensive: 'Defensive', aggro: 'Aggro' }[style];
