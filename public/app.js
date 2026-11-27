@@ -719,7 +719,7 @@ function renderPrompt() {
       box.appendChild(el('div', 'muted', 'Click a glowing zone on the field.'));
     } else if (d.kind === 'chain') {
       box.appendChild(el('div', 'muted', d.choices.some((c) => !c.card)
-        ? "Click a glowing card to activate it, or press Don't activate."
+        ? "Click a glowing card to activate it, or press Don't activate (or Space)."
         : 'Click a glowing card to activate it.'));
     }
   } else if (view.waitingFor !== null && view.waitingFor !== undefined) {
@@ -1495,6 +1495,7 @@ function render() {
   animateLp();
   drawAttackArrow();
   runFx();
+  if (spaceHeld) setTimeout(autoSkip, 0);
 }
 
 /** EDOPro-style attack indicator: a red arrow from the attacker to its target (or to the player for a direct attack). */
@@ -1615,3 +1616,60 @@ document.addEventListener('keydown', (ev) => {
   ev.preventDefault();
   panel.scrollTop += ev.key === 'ArrowDown' ? 60 : -60;
 });
+
+/**
+ * Space bar (like EDOPro's "ignore" key):
+ * - pressing it when a question appears ignores it: "Don't activate", "No", or Cancel;
+ * - while it is held down, "Do you want to activate...?" and "Use the effect of...?" questions are skipped
+ *   automatically (Don't activate / No), so you can let a chain or a phase go by without stopping.
+ */
+let spaceHeld = false;
+let autoSkipped = null;
+const typingNow = () => document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+const inDuel = () => view && mode !== null && $('lobby').classList.contains('hidden');
+
+/** The "ignore" answer for a question: { picks } (null picks = cancel), or null when it can't be ignored. */
+function ignoreAnswer(d, holding) {
+  if (!d || view.winner !== null) return null;
+  if (d.kind === 'chain') {
+    const pass = d.choices.find((c) => !c.card && c.label === "Don't activate");
+    return pass ? { picks: [pass.id] } : null;
+  }
+  if (d.kind === 'yesno') {
+    // While held, only optional effects ("Use the effect of...?"); a plain yes/no is part of something you chose.
+    if (holding && !/^Use the effect of/.test(d.prompt)) return null;
+    const no = d.choices.find((c) => !c.card && c.label === 'No');
+    return no ? { picks: [no.id] } : null;
+  }
+  if (holding) return null;
+  return d.canCancel ? { picks: null } : null;
+}
+
+function autoSkip() {
+  if (!spaceHeld || busy || fx.playing || !inDuel()) return;
+  const d = view.decision;
+  if (!d || autoSkipped === d.id) return;
+  const skip = ignoreAnswer(d, true);
+  if (!skip) return;
+  autoSkipped = d.id;
+  answer(skip.picks);
+}
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.code !== 'Space' || typingNow() || !inDuel()) return;
+  ev.preventDefault(); // don't scroll the page or "click" the last button you pressed
+  if (ev.repeat) return;
+  spaceHeld = true;
+  if (!$('popup').classList.contains('hidden')) { closePopup(); return; }
+  if (actionConfirm) { actionConfirm = null; renderActions(); return; }
+  const d = view.decision;
+  if (busy || fx.playing || !d) return;
+  const skip = ignoreAnswer(d, false);
+  if (skip) { autoSkipped = d.id; answer(skip.picks); }
+}, true);
+document.addEventListener('keyup', (ev) => {
+  if (ev.code !== 'Space') return;
+  spaceHeld = false;
+  if (!typingNow() && inDuel()) ev.preventDefault();
+}, true);
+window.addEventListener('blur', () => { spaceHeld = false; });
