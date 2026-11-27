@@ -450,6 +450,7 @@ function showDetail(code, card) {
   const menuPanel = !$('lobby').classList.contains('hidden') && $('menu-detail');
   const box = menuPanel || $('detail');
   box.replaceChildren();
+  box.scrollTop = 0; // a new card's text starts at the top
   if (!info) return;
   if (isPhone()) {
     if (sheetFor.code !== code || !box.classList.contains('sheet-open')) { sheetFor.code = code; sheetFor.at = Date.now(); }
@@ -1559,3 +1560,54 @@ $('btn-report').addEventListener('click', () => openBugReport());
   else if (room && currentUser) joinOnline(room); // gives your seat back if you were already in this duel
   else render();
 })();
+
+// ------------------------------------------------------------------ mouse and keyboard shortcuts
+
+/** Right-click cancels (like EDOPro): an open action pop-up, the Confirm step, or a question that can be cancelled. */
+document.addEventListener('contextmenu', (ev) => {
+  if (!view || mode === null) return;
+  if (!$('popup').classList.contains('hidden')) {
+    ev.preventDefault();
+    closePopup();
+    return;
+  }
+  if (actionConfirm) {
+    ev.preventDefault();
+    actionConfirm = null;
+    renderActions();
+    return;
+  }
+  const d = view.decision;
+  if (d && d.canCancel && !busy && view.winner === null) {
+    ev.preventDefault();
+    answer(null);
+  }
+});
+
+/**
+ * While the mouse is on a card, the mouse wheel and the Up / Down arrow keys scroll that card's text in the side
+ * panel (only when the text is too long to fit, so lists still scroll normally over short cards).
+ */
+let hoveredCard = null;
+document.addEventListener('mouseover', (ev) => { hoveredCard = ev.target.closest ? ev.target.closest('.card, .tile') : null; });
+document.addEventListener('mouseleave', () => { hoveredCard = null; });
+function cardTextPanel() {
+  const panel = !$('lobby').classList.contains('hidden') ? $('menu-detail') : $('detail');
+  if (!panel || !hoveredCard || !hoveredCard.isConnected || panel.contains(hoveredCard)) return null;
+  return panel.scrollHeight > panel.clientHeight + 4 ? panel : null;
+}
+document.addEventListener('wheel', (ev) => {
+  const panel = cardTextPanel();
+  if (!panel) return;
+  ev.preventDefault();
+  panel.scrollTop += ev.deltaY;
+}, { passive: false });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
+  const typing = document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+  if (typing) return;
+  const panel = cardTextPanel();
+  if (!panel) return;
+  ev.preventDefault();
+  panel.scrollTop += ev.key === 'ArrowDown' ? 60 : -60;
+});
