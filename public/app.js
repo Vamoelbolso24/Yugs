@@ -469,6 +469,10 @@ function showDetail(code, card) {
   if (info.lscale || info.rscale) meta.push(`Pendulum Scale ${info.lscale} / ${info.rscale}`);
   if (info.frame === 'link') meta.push(`Link Arrows: ${linkArrows(info.linkMarkers)}`);
   box.appendChild(el('div', 'meta', meta.join('\n')));
+  if (card && card.treatedAs) {
+    const as = cardInfo(card.treatedAs);
+    box.appendChild(el('div', 'treated-as', `Treated as: ${as ? as.name : card.treatedAs}`));
+  }
   if (info.isMonster) {
     const atk = card && card.atk !== undefined ? card.atk : info.atk;
     const def = card && card.def !== undefined ? card.def : info.def;

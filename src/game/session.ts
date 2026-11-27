@@ -688,11 +688,15 @@ export class DuelSession {
         hidden.add(keyOf(controller, location, sequence));
         return { code: 0, faceDown: true, defense: (position & OcgPosition.DEFENSE) !== 0 };
       }
-      // ALIAS = the card's current name when an effect changed it (e.g. Psyduck's "No Weather Condition").
-      const code = (c.alias && this.cards.get(c.alias) ? c.alias : c.code) ?? 0;
+      // Show the card itself (its own art and text, like EDOPro). ALIAS = its current name when an effect
+      // changed it (Dark Magician the Dragon Knight is "always treated as Dark Magician"): shown as a note.
+      const code = c.code ?? 0;
       if (code) used.add(code);
+      const treatedAs = c.alias && c.alias !== code && this.cards.get(c.alias) && this.cards.name(c.alias) !== this.cards.name(code) ? c.alias : undefined;
+      if (treatedAs) used.add(treatedAs);
       return {
         code,
+        treatedAs,
         faceDown,
         defense: (position & OcgPosition.DEFENSE) !== 0,
         atk: c.attack,

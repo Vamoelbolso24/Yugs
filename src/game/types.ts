@@ -9,6 +9,8 @@ export interface CardRef {
 }
 
 export interface CardView {
+  /** Its current name when an effect changed it (e.g. "always treated as Dark Magician"). */
+  treatedAs?: number;
   code: number;
   faceDown: boolean;
   defense: boolean;
