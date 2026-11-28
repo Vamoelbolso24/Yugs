@@ -269,6 +269,7 @@ let lastHandPick = null;
 
 async function answer(picks) {
   if (busy || !view || !view.decision) return;
+  if (dragPlan && dragPlan.from === view.decision.id && !(picks && dragPlan.ids.includes(picks[0]))) dragPlan = null;
   busy = true;
   requestError = '';
   closePopup();
@@ -508,6 +509,7 @@ function placeCard(card, controller, location, sequence, actions) {
       ev.stopPropagation();
       openPopup(e, choices);
     });
+    makeDraggable(e, controller, location, choices);
   }
   return e;
 }
@@ -1000,13 +1002,20 @@ function renderReveal() {
     }
     box.appendChild(row);
   }
-  const footer = el('div', 'reveal-footer');
-  const ok = el('button', '', 'OK');
-  ok.addEventListener('click', (ev) => {
+  const done = (ev) => {
     ev.stopPropagation();
     revealSeen.id = Math.max(...unseen.map((r) => r.id));
     box.classList.add('hidden');
-  });
+    $('detail').classList.remove('sheet-open');
+  };
+  // Many cards (e.g. looking at a whole Deck): the cards scroll inside the panel; OK and ✕ always stay reachable.
+  const x = el('button', 'reveal-x secondary', '✕');
+  x.title = 'Close';
+  x.addEventListener('click', done);
+  box.prepend(x);
+  const footer = el('div', 'reveal-footer');
+  const ok = el('button', '', 'OK');
+  ok.addEventListener('click', done);
   footer.appendChild(ok);
   box.appendChild(footer);
 }
@@ -1496,6 +1505,7 @@ function render() {
   drawAttackArrow();
   runFx();
   if (spaceHeld) setTimeout(autoSkip, 0);
+  if (dragPlan) setTimeout(followDragPlan, 0);
 }
 
 /** EDOPro-style attack indicator: a red arrow from the attacker to its target (or to the player for a direct attack). */
@@ -1673,3 +1683,176 @@ document.addEventListener('keyup', (ev) => {
   if (!typingNow() && inDuel()) ev.preventDefault();
 }, true);
 window.addEventListener('blur', () => { spaceHeld = false; });
+
+// ------------------------------------------------------------------ drag and drop (mouse and touch)
+/*
+ * Main Phase: drag a card from your hand onto your field to play it there (one possible action: done; several,
+ * like Summon or Set: a small menu at that spot). The card goes to the zone you dropped it on.
+ * Battle Phase: drag your monster onto an opponent's monster to attack it (or anywhere on their side).
+ * A short tap still works like before.
+ */
+let dragPlan = null;      // { from: question id, ids: choice ids, player, zone?, target?, at }
+let dragEndedAt = 0;
+
+const zoneInfo = (node) => {
+  const z = node && node.closest ? node.closest('[data-zone]') : null;
+  if (!z) return null;
+  const [controller, location, sequence] = z.dataset.zone.split('-').map(Number);
+  return { node: z, controller, location, sequence };
+};
+
+function makeDraggable(e, controller, location, choices) {
+  const d = view.decision;
+  if (!d || controller !== d.player) return;
+  let kind = null;
+  if (location === LOC.HAND && d.kind === 'idle') kind = 'play';
+  else if (location === LOC.MZONE && d.kind === 'battle' && choices.some((c) => c.label.startsWith('Attack'))) kind = 'attack';
+  if (!kind) return;
+  e.classList.add('draggable', kind === 'play' ? 'drag-play' : 'drag-attack');
+  e.addEventListener('pointerdown', (ev) => startDrag(ev, e, kind, choices, d));
+}
+
+function dropTargets(kind, player) {
+  return [...document.querySelectorAll('[data-zone]')].filter((z) => {
+    const [c, loc, seq] = z.dataset.zone.split('-').map(Number);
+    if (kind === 'play') return c === player && (loc === LOC.MZONE || loc === LOC.SZONE) && seq !== undefined && !Number.isNaN(seq);
+    return c !== player && loc === LOC.MZONE && z.querySelector('.card');
+  });
+}
+
+function startDrag(ev, card, kind, choices, d) {
+  if (ev.button !== 0 || busy) return;
+  const x0 = ev.clientX, y0 = ev.clientY;
+  let ghostEl = null, targets = [], hover = null, scrolling = null;
+  const where = (x, y) => document.elementFromPoint(x, y);
+  const move = (m) => {
+    if (m.pointerId !== ev.pointerId) return;
+    const dx = m.clientX - x0, dy = m.clientY - y0;
+    if (scrolling) {
+      // Touch: sliding a hand card sideways scrolls the hand (and up/down scrolls the page), like before.
+      m.preventDefault();
+      if (scrolling.hand) scrolling.hand.scrollLeft = scrolling.left - dx;
+      window.scrollTo(window.scrollX, scrolling.top - dy);
+      return;
+    }
+    if (!ghostEl) {
+      if (Math.hypot(dx, dy) < 10) return;
+      // On a touch screen a hand card is dragged by pushing it up; any other direction scrolls.
+      if (kind === 'play' && m.pointerType !== 'mouse' && !(dy < 0 && -dy >= Math.abs(dx) * 0.5)) {
+        scrolling = { hand: card.closest('.hand'), left: card.closest('.hand')?.scrollLeft ?? 0, top: window.scrollY + dy };
+        scrolling.left += dx;
+        return move(m);
+      }
+      // Start dragging.
+      closePopup();
+      $('detail').classList.remove('sheet-open');
+      const r = card.getBoundingClientRect();
+      ghostEl = card.cloneNode(true);
+      ghostEl.classList.add('drag-ghost');
+      Object.assign(ghostEl.style, { width: `${r.width}px`, height: `${r.height}px` });
+      document.body.appendChild(ghostEl);
+      card.classList.add('dragging');
+      targets = dropTargets(kind, d.player);
+      targets.forEach((t) => t.classList.add(kind === 'attack' ? 'drop-attack' : 'drop-ok'));
+    }
+    m.preventDefault();
+    const r = ghostEl.getBoundingClientRect();
+    ghostEl.style.left = `${m.clientX - r.width / 2}px`;
+    ghostEl.style.top = `${m.clientY - r.height / 2}px`;
+    const z = zoneInfo(where(m.clientX, m.clientY));
+    const now = z && targets.includes(z.node) ? z.node : null;
+    if (now !== hover) {
+      if (hover) hover.classList.remove('drop-hover');
+      if (now) now.classList.add('drop-hover');
+      hover = now;
+    }
+  };
+  const end = (u) => {
+    if (u.pointerId !== ev.pointerId) return;
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', end);
+    window.removeEventListener('pointercancel', end);
+    if (scrolling) { dragEndedAt = Date.now(); return; } // a scroll, not a tap
+    if (!ghostEl) return; // just a tap: the normal click handles it
+    dragEndedAt = Date.now();
+    ghostEl.remove();
+    card.classList.remove('dragging');
+    targets.forEach((t) => t.classList.remove('drop-ok', 'drop-attack', 'drop-hover'));
+    if (u.type === 'pointercancel' || !view || !view.decision || view.decision.id !== d.id) return;
+    const under = where(u.clientX, u.clientY);
+    if (kind === 'play') dropPlay(under, choices, d);
+    else dropAttack(under, card, choices, d);
+  };
+  window.addEventListener('pointermove', move, { passive: false });
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
+}
+
+function dropPlay(under, choices, d) {
+  const z = zoneInfo(under);
+  if (!z || z.controller !== d.player || (z.location !== LOC.MZONE && z.location !== LOC.SZONE)) return;
+  const empty = !z.node.querySelector('.card');
+  // A monster dropped on the monster row: only its Summon / Set; a Spell/Trap on its row: only Activate / Set.
+  // Anywhere else: everything the card can do.
+  const info = choices[0].card && cardInfo(choices[0].card.code);
+  let list = choices;
+  if (info) {
+    const fit = z.location === LOC.MZONE
+      ? choices.filter((c) => info.isMonster && ['Normal Summon', 'Special Summon', 'Set'].includes(c.label))
+      : choices.filter((c) => !info.isMonster && ['Activate', 'Set'].includes(c.label));
+    if (fit.length) list = fit;
+  }
+  dragPlan = { from: d.id, ids: list.map((c) => c.id), player: d.player, at: Date.now(),
+    zone: empty ? { controller: z.controller, location: z.location, sequence: z.sequence } : null };
+  if (list.length === 1) answer([list[0].id]);
+  else openPopup(z.node, list);
+}
+
+function dropAttack(under, card, choices, d) {
+  const attack = choices.find((c) => c.label.startsWith('Attack'));
+  if (!attack) return;
+  const z = zoneInfo(under);
+  let target = null;
+  if (z && z.controller !== d.player && z.location === LOC.MZONE && z.node.querySelector('.card')) {
+    target = { controller: z.controller, location: z.location, sequence: z.sequence };
+  } else {
+    // Anywhere on the opponent's side (or the Extra Monster Zone row): attack and choose the target as usual.
+    const mySide = card.closest('.side');
+    const side = under && under.closest ? under.closest('.side, #emz-row') : null;
+    if (!side || side === mySide) return;
+  }
+  dragPlan = { from: d.id, ids: [attack.id], player: d.player, at: Date.now(), target };
+  answer([attack.id]);
+}
+
+/** The question right after a drag: the zone to use, or the attack target — answered with where you dropped. */
+function followDragPlan() {
+  const plan = dragPlan;
+  if (!plan || busy || fx.playing || !view) return;
+  const d = view.decision;
+  if (Date.now() - plan.at > 15000) { dragPlan = null; return; }
+  if (!d || d.id === plan.from) return;           // still waiting for the next question
+  dragPlan = null;
+  if (d.player !== plan.player) return;
+  const same = (c, pos) => c.card && pos && c.card.controller === pos.controller && c.card.location === pos.location && c.card.sequence === pos.sequence;
+  if (plan.zone && d.kind === 'place') {
+    const c = d.choices.find((x) => same(x, plan.zone));
+    if (c) answer([c.id]);
+  } else if (plan.target && d.mode === 'multi' && d.max === 1) {
+    const c = d.choices.find((x) => same(x, plan.target));
+    if (c) answer([c.id]);
+  }
+}
+
+// After a drag, the browser may still send a "click" to the card: ignore it.
+document.addEventListener('click', (ev) => {
+  if (Date.now() - dragEndedAt < 350) { ev.stopPropagation(); ev.preventDefault(); }
+}, true);
+
+// Graveyard / Banished / Extra Deck lists: tapping outside the list closes it too (handy on phones).
+$('modal').addEventListener('click', (ev) => {
+  const modal = $('modal');
+  if (ev.target !== modal || !modal.dataset.info) return;
+  delete modal.dataset.info;
+  modal.classList.add('hidden');
+});
