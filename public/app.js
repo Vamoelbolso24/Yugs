@@ -941,6 +941,15 @@ function showPileList(label, cards, controller) {
 function openPopup(anchor, choices, withNames = false) {
   const pop = $('popup');
   pop.replaceChildren();
+  const phone = isPhone();
+  pop.classList.toggle('phone-menu', phone);
+  if (phone) {
+    // Phones: a small window in the middle of the screen (above the card text panel), with Cancel.
+    $('detail').classList.remove('sheet-open');
+    const codes = [...new Set(choices.map((c) => c.card && c.card.code).filter(Boolean))];
+    const info = codes.length === 1 ? cardInfo(codes[0]) : null;
+    pop.appendChild(el('div', 'menu-title', info ? info.name : 'Choose an action'));
+  }
   for (const c of choices) {
     const b = el('button', '', withNames ? choiceText(c).main : c.label);
     if (c.card && c.card.code) b.addEventListener('mouseenter', () => showDetail(c.card.code));
@@ -950,6 +959,24 @@ function openPopup(anchor, choices, withNames = false) {
     });
     pop.appendChild(b);
     if (c.detail) pop.appendChild(el('div', 'detail-line', c.detail));
+  }
+  if (phone) {
+    const row = el('div', 'menu-row');
+    const codes = [...new Set(choices.map((c) => c.card && c.card.code).filter(Boolean))];
+    if (codes.length === 1) {
+      const read = el('button', 'secondary', 'Card text');
+      const card = choices.find((c) => c.card && c.card.code).card;
+      read.addEventListener('click', (ev) => { ev.stopPropagation(); closePopup(); showDetail(codes[0], card); });
+      row.appendChild(read);
+    }
+    const cancel = el('button', 'secondary', 'Cancel');
+    cancel.addEventListener('click', (ev) => { ev.stopPropagation(); closePopup(); });
+    row.appendChild(cancel);
+    pop.appendChild(row);
+    pop.style.left = '';
+    pop.style.top = '';
+    pop.classList.remove('hidden');
+    return;
   }
   pop.classList.remove('hidden');
   const r = anchor.getBoundingClientRect();
@@ -1856,3 +1883,6 @@ $('modal').addEventListener('click', (ev) => {
   delete modal.dataset.info;
   modal.classList.add('hidden');
 });
+
+// Taps inside the phone action window (its title, the gaps) don't close it; only Cancel or a tap outside do.
+$('popup').addEventListener('click', (ev) => { if ($('popup').classList.contains('phone-menu')) ev.stopPropagation(); });

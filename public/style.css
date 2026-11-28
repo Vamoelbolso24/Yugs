@@ -589,3 +589,13 @@ button.danger { background: #c0392b; color: #fff; }
 @media (max-width: 760px) {
   .reveal { top: 8px; max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); padding: 10px; }
 }
+
+/* Phones: the card's actions in a small window in the middle of the screen */
+.popup.phone-menu { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); z-index: 75;
+  width: min(300px, 86vw); max-height: 80vh; overflow-y: auto; padding: 12px; gap: 8px;
+  box-shadow: 0 0 0 100vmax rgba(5, 8, 14, .55), 0 12px 40px #000c; }
+.popup.phone-menu .menu-title { font-weight: 700; font-size: 15px; padding: 0 2px 4px; border-bottom: 1px solid var(--line); }
+.popup.phone-menu > button { padding: 11px 12px; font-size: 15px; }
+.popup.phone-menu .detail-line { max-width: none; }
+.popup.phone-menu .menu-row { display: flex; gap: 8px; margin-top: 4px; }
+.popup.phone-menu .menu-row button { flex: 1; padding: 9px 10px; }
